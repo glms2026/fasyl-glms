@@ -1,4 +1,4 @@
-import { FilePlus2, Landmark, FileSpreadsheet, Users } from "lucide-react";
+import { FilePlus2, FileSpreadsheet, Users } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 
