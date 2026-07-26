@@ -8,12 +8,7 @@ import { useSidebarStore } from "@/layouts/store/useSidebarStore";
 
 import type { SidebarProps } from "./layout.types";
 
-export function Sidebar({
-  organization,
-  subtitle,
-  actionLabel,
-  navigation,
-}: SidebarProps) {
+export function Sidebar({ organization, subtitle, navigation }: SidebarProps) {
   const collapsed = useSidebarStore((state) => state.collapsed);
 
   return (
@@ -23,11 +18,7 @@ export function Sidebar({
         collapsed ? "w-20" : "w-72",
       )}
     >
-      <SidebarHeader
-        organization={organization}
-        subtitle={subtitle}
-        actionLabel={actionLabel}
-      />
+      <SidebarHeader organization={organization} subtitle={subtitle} />
 
       <SidebarNavigation navigation={navigation} />
 

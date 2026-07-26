@@ -29,7 +29,7 @@ export function SidebarFooter() {
   );
 
   return (
-    <div className="space-y-2 border-t border-neutral-200 p-4">
+    <div className="space-y-2  p-4">
       {collapsed ? (
         <>
           <Tooltip content="Support">{supportButton}</Tooltip>
