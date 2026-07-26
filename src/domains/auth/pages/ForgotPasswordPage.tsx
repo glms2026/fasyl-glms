@@ -16,7 +16,9 @@ export default function ForgotPasswordPage() {
 
   //   const { setToken, fetchCurrentUser } = useAuthStore();
 
-  const handleResetPassword = async (values: ForgotPasswordFormValues) => {};
+  const handleResetPassword = async (values: ForgotPasswordFormValues) => {
+    console.log(values);
+  };
 
   return (
     <AuthLayout>
