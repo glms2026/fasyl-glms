@@ -63,8 +63,6 @@ export const PasswordField = React.forwardRef<
               "pl-11",
               "pr-11",
               "border-neutral-300",
-              "focus-visible:ring-0",
-              "focus-visible:border-black",
               error && "border-red-500",
               className,
             ]
