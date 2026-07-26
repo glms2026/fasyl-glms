@@ -55,9 +55,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <main
           style={{
             backgroundImage: `
-      linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15)),
+      linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)),
       url(${threedBg})
     `,
+            filter: "0.6",
           }}
           className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat px-8"
         >
@@ -66,7 +67,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div className="absolute -right-32 bottom-10 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl" />
 
           {/* Glass Card */}
-          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/20 bg-white/10 p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="relative z-10 w-full max-w-md  p-8  backdrop-blur-4xl">
             {children}
           </div>
         </main>
