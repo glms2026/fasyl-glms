@@ -1,8 +1,22 @@
 HELP.md
+# Spring Boot
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+*.log
+
+# Secrets
+.env
+application-local.properties
+
+
+
+
+
+# IDE
+.idea/
+*.iml
 
 ### STS ###
 .apt_generated
@@ -16,7 +30,6 @@ target/
 ### IntelliJ IDEA ###
 .idea
 *.iws
-*.iml
 *.ipr
 
 ### NetBeans ###
