@@ -12,6 +12,7 @@ import com.glms.general_ledger_management_system.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,19 @@ public class DatabaseInitializer
 
 
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.username}")
+    private String adminUsername;
+
+    @Value("${admin.password}")
+    private String adminPassword;
+
+
+    @Value("${user.username}")
+    private String userUsername;
+
+    @Value("${user.password}")
+    private String userPassword;
 
 
 
@@ -166,13 +180,13 @@ public class DatabaseInitializer
 
                         .lastName("Administrator")
 
-                        .username("admin")
+                        .username(adminUsername)
 
                         .email("admin@glms.com")
 
                         .password(
                                 passwordEncoder.encode(
-                                        "admin123"
+                                        adminPassword
                                 )
                         )
 
@@ -248,13 +262,13 @@ public class DatabaseInitializer
 
                         .lastName("User")
 
-                        .username("user")
+                        .username(userUsername)
 
                         .email("user@glms.com")
 
                         .password(
                                 passwordEncoder.encode(
-                                        "user123"
+                                        userPassword
                                 )
                         )
 
