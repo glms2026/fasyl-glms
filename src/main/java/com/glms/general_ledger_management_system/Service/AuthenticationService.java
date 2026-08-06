@@ -55,6 +55,8 @@ public class AuthenticationService {
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
+    private final RefreshTokenService refreshTokenService;
+
 
 
     /**
@@ -117,12 +119,15 @@ public class AuthenticationService {
         /*
          * Generate JWT Token
          */
-        String token =
+        String accessToken =
                 jwtService.generateToken(
                         userDetails
                 );
 
-
+        RefreshToken refreshToken =
+                refreshTokenService.createRefreshToken(
+                        user
+                );
 
 
         /*
@@ -130,7 +135,7 @@ public class AuthenticationService {
          */
         saveUserToken(
                 user,
-                token
+                accessToken
         );
 
 
@@ -154,7 +159,11 @@ public class AuthenticationService {
 
         return LoginResponse.builder()
 
-                .accessToken(token)
+                .accessToken(accessToken)
+
+                .refreshToken(
+                        refreshToken.getToken()
+                )
 
                 .username(
                         user.getUsername()
@@ -610,6 +619,104 @@ public class AuthenticationService {
 
 
         jwtTokenRepository.saveAll(tokens);
+
+    }
+
+
+
+    /**
+     * Refresh Access Token
+     */
+    public LoginResponse refreshToken(
+            RefreshTokenRequest request
+    ) {
+
+        RefreshToken refreshToken =
+                refreshTokenService.verifyToken(
+
+                        refreshTokenService.findByToken(
+                                request.getRefreshToken()
+                        )
+
+                );
+
+
+        User user =
+                refreshToken.getUser();
+
+
+        validateUserStatus(user);
+
+
+        UserDetails userDetails =
+                org.springframework.security.core.userdetails.User
+
+                        .withUsername(
+                                user.getUsername()
+                        )
+
+                        .password(
+                                user.getPassword()
+                        )
+
+                        .authorities(
+
+                                user.getRoles()
+                                        .stream()
+                                        .map(Role::getName)
+                                        .toArray(String[]::new)
+
+                        )
+
+                        .build();
+
+
+        String accessToken =
+                jwtService.generateToken(
+                        userDetails
+                );
+
+
+        saveUserToken(
+                user,
+                accessToken
+        );
+
+
+        createAuditLog(
+
+                user.getUsername(),
+
+                "REFRESH_TOKEN",
+
+                "Access token refreshed"
+
+        );
+
+
+        return LoginResponse.builder()
+
+                .accessToken(
+                        accessToken
+                )
+
+                .refreshToken(
+                        refreshToken.getToken()
+                )
+
+                .username(
+                        user.getUsername()
+                )
+
+                .role(
+                        user.getRoles()
+                                .stream()
+                                .findFirst()
+                                .map(Role::getName)
+                                .orElse(null)
+                )
+
+                .build();
 
     }
 

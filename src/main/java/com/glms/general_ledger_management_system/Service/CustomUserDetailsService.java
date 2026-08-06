@@ -19,6 +19,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -58,29 +60,50 @@ public class CustomUserDetailsService
 
 
 
-        /*
-         * Convert Roles To Spring Security Authorities
-         *
-         * Database:
-         * ADMIN
-         * USER
-         *
-         * Spring Security:
-         * ROLE_ADMIN
-         * ROLE_USER
-         */
-        var authorities =
-                user.getRoles()
-                        .stream()
-                        .map(
-                                role ->
-                                        new SimpleGrantedAuthority(
-                                                "ROLE_" + role.getName()
-                                        )
-                        )
-                        .collect(
-                                Collectors.toSet()
-                        );
+        Set<SimpleGrantedAuthority> authorities =
+                new HashSet<>();
+
+
+        user.getRoles()
+                .forEach(role -> {
+
+
+                    /*
+                     * Add Role Authority
+                     *
+                     * Example:
+                     * ROLE_ADMIN
+                     * ROLE_USER
+                     */
+                    authorities.add(
+                            new SimpleGrantedAuthority(
+                                    "ROLE_" + role.getName()
+                            )
+                    );
+
+
+
+                    /*
+                     * Add Permission Authority
+                     *
+                     * Example:
+                     * USER_CREATE
+                     * ROLE_ASSIGN_PERMISSION
+                     * LEDGER_CREATE
+                     */
+                    role.getPermissions()
+                            .forEach(permission ->
+
+                                    authorities.add(
+                                            new SimpleGrantedAuthority(
+                                                    permission.getName()
+                                            )
+                                    )
+
+                            );
+
+
+                });
 
 
 

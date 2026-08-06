@@ -62,6 +62,19 @@ public class AuthenticationController {
 
 
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(
+            @Valid
+            @RequestBody RefreshTokenRequest request
+    ) {
+
+        LoginResponse response =
+                authenticationService.refreshToken(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 
@@ -229,7 +242,7 @@ public class AuthenticationController {
 
                         .email(user.getEmail())
 
-                        .status(user.getStatus())
+                        .status(String.valueOf(user.getStatus()))
 
                         .roles(
                                 user.getRoles()

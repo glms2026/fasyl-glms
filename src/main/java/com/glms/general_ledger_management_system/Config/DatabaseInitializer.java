@@ -197,6 +197,7 @@ public class DatabaseInitializer
                         .createdAt(
                                 LocalDateTime.now()
                         )
+                        .failedLoginAttempts(0)
 
                         .roles(
                                 Set.of(adminRole)
@@ -279,6 +280,7 @@ public class DatabaseInitializer
                         .createdAt(
                                 LocalDateTime.now()
                         )
+                        .failedLoginAttempts(0)
 
                         .roles(
                                 Set.of(userRole)

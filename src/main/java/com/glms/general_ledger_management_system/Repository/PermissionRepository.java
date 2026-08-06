@@ -16,5 +16,14 @@ public interface PermissionRepository
             String name
     );
 
+    /**
+     * Check Permission Exists
+     */
+    boolean existsByName(
+            String name
+    );
+
+    Optional<Permission> findByNameIgnoreCase(String name);
+
 
 }

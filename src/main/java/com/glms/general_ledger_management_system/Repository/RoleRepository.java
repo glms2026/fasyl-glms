@@ -16,5 +16,13 @@ public interface RoleRepository
             String name
     );
 
+    /**
+     * Check If Role Exists
+     */
+    boolean existsByName(
+            String name
+    );
+
+
 
 }

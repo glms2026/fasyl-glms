@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -63,6 +64,35 @@ public class User {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "UPDATED_AT")
+    private LocalDateTime updatedAt;
+
+
+    @Column(nullable = false, name = "failed_login_attempts")
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "lockout_time")
+    private LocalDateTime lockoutTime;
+
+
+    @Column(name = "SUSPENDED_AT")
+    private ZonedDateTime suspendedAt;
+
+
+    @Column(name = "SUSPENDED_BY")
+    private String suspendedBy;
+
+    @Column(name = "lock_reason")
+    private String lockReason;
+
+    @Column(name = "locked_at")
+    private ZonedDateTime lockedAt;
+
+    @Column(name = "locked_by")
+    private String lockedBy;
+
+
 
 
     @ManyToMany(
@@ -83,6 +113,17 @@ public class User {
     )
     private Set<Role> roles =
             new HashSet<>();
+
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
 
 }

@@ -1,10 +1,13 @@
 package com.glms.general_ledger_management_system.Model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Entity
@@ -55,6 +58,18 @@ public class Permission {
             length = 500
     )
     private String description;
+
+    /**
+     * Relationship with Roles
+     */
+    @JsonIgnore
+    @ManyToMany(
+            mappedBy = "permissions"
+    )
+    @Builder.Default
+    private Set<Role> roles =
+            new HashSet<>();
+
 
 
 }

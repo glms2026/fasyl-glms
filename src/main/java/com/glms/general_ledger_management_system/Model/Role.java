@@ -53,6 +53,7 @@ public class Role {
     @ManyToMany(
             mappedBy = "roles"
     )
+    @Builder.Default
     private Set<User> users =
             new HashSet<>();
 
@@ -62,7 +63,7 @@ public class Role {
 
 
     @ManyToMany(
-            fetch = FetchType.LAZY
+            fetch = FetchType.EAGER
     )
     @JoinTable(
             name = "ROLE_PERMISSIONS",

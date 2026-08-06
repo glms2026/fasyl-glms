@@ -71,9 +71,8 @@ public class JwtAuthenticationEntryPoint
 
         errorResponse.put(
                 "timestamp",
-                Instant.now()
+                java.time.LocalDateTime.now().toString()
         );
-
 
         errorResponse.put(
                 "status",
