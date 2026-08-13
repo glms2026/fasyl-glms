@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -154,6 +156,20 @@ public class RolePermissionService {
         );
 
         return role;
+    }
+
+    /**
+     * Get All Roles
+     */
+    @Transactional(readOnly = true)
+    public List<Role> getAllRoles() {
+
+        return roleRepository.findAll()
+                .stream()
+                .sorted(
+                        Comparator.comparing(Role::getId)
+                )
+                .toList();
     }
 
     /**

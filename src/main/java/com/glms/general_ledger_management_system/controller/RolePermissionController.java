@@ -3,6 +3,7 @@ package com.glms.general_ledger_management_system.controller;
 import com.glms.general_ledger_management_system.DTO.common.ApiResponse;
 import com.glms.general_ledger_management_system.DTO.role.AssignPermissionRequest;
 import com.glms.general_ledger_management_system.DTO.role.PermissionResponse;
+import com.glms.general_ledger_management_system.DTO.role.RoleResponse;
 import com.glms.general_ledger_management_system.DTO.user.UserApprovalRequestResponse;
 import com.glms.general_ledger_management_system.Model.Permission;
 import com.glms.general_ledger_management_system.Model.Role;
@@ -145,6 +146,41 @@ public class RolePermissionController {
                         .success(true)
                         .message("All permissions removed successfully.")
                         .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * ============================================================
+     * GET ALL ROLES
+     * ============================================================
+     *
+     * Read-only - returns every role with its ID, name and
+     * permission names. Visible to CONTROL, AUTHORIZER and ADMIN.
+     */
+    @GetMapping
+    @PreAuthorize(
+            "hasAnyRole('CONTROL', 'AUTHORIZER', 'ADMIN')"
+    )
+    public ResponseEntity<List<RoleResponse>> getAllRoles() {
+
+        List<RoleResponse> response =
+                rolePermissionService.getAllRoles()
+                        .stream()
+                        .map(role ->
+                                RoleResponse.builder()
+                                        .id(role.getId())
+                                        .name(role.getName())
+                                        .permissions(
+                                                role.getPermissions()
+                                                        .stream()
+                                                        .map(Permission::getName)
+                                                        .collect(Collectors.toSet())
+                                        )
+                                        .build()
+                        )
+                        .toList();
 
         return ResponseEntity.ok(response);
     }
