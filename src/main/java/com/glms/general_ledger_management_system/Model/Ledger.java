@@ -1,14 +1,39 @@
 package com.glms.general_ledger_management_system.Model;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
-
 @Entity
-@Table(name="LEDGERS")
+@Table(
+        name = "LEDGERS",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "UK_LEDGER_CODE",
+                        columnNames = "LEDGER_CODE"
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "IDX_LEDGER_CODE",
+                        columnList = "LEDGER_CODE"
+                ),
+                @Index(
+                        name = "IDX_LEDGER_NAME",
+                        columnList = "LEDGER_NAME"
+                ),
+                @Index(
+                        name = "IDX_LEDGER_STATUS",
+                        columnList = "STATUS"
+                ),
+                @Index(
+                        name = "IDX_LEDGER_TYPE",
+                        columnList = "LEDGER_TYPE"
+                )
+
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,44 +41,157 @@ import java.time.LocalDateTime;
 @Builder
 public class Ledger {
 
-
     @Id
     @GeneratedValue(
-            strategy = GenerationType.SEQUENCE
+            strategy = GenerationType.SEQUENCE,
+            generator = "ledger_seq"
+    )
+    @SequenceGenerator(
+            name = "ledger_seq",
+            sequenceName = "LEDGER_SEQ",
+            allocationSize = 1
     )
     private Long id;
 
+    /**
+     * Unique Ledger Code
+     * Example:
+     * 1000
+     * 1100
+     * 2000
+     */
+    @Column(
+            name = "LEDGER_CODE",
+            nullable = false,
+            unique = true,
+            length = 20
+    )
+    private String ledgerCode;
 
-
+    /**
+     * Ledger Name
+     */
+    @Column(
+            name = "LEDGER_NAME",
+            nullable = false,
+            length = 150
+    )
     private String ledgerName;
 
-
-
+    /**
+     * Ledger Description
+     */
+    @Column(
+            name = "DESCRIPTION",
+            length = 500
+    )
     private String description;
 
+    /**
+     * Ledger Status
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "STATUS",
+            nullable = false,
+            length = 20
+    )
+    @Builder.Default
+    private LedgerStatus status = LedgerStatus.ACTIVE;
 
 
-    private boolean active;
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "LEDGER_TYPE",
+            nullable = false,
+            length = 30
+    )
 
+    private LedgerType ledgerType = LedgerType.GENERAL;
 
-
-    private LocalDateTime createdAt;
-
-
-
-    @ManyToOne
+    /**
+     * User that created the ledger
+     */
+//    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-            name="created_by"
+            name = "CREATED_BY",
+            nullable = false,
+            foreignKey = @ForeignKey(
+                    name = "FK_LEDGER_CREATED_BY"
+            )
     )
     private User createdBy;
 
-
-
-    @ManyToOne
+    /**
+     * User that last updated the ledger
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-            name="ledger_type_id"
+            name = "UPDATED_BY",
+            foreignKey = @ForeignKey(
+                    name = "FK_LEDGER_UPDATED_BY"
+            )
     )
-    private LedgerType ledgerType;
+    private User updatedBy;
 
+    /**
+     * Soft Delete Flag
+     */
+    @Column(
+            name = "DELETED",
+            nullable = false
+    )
+    @Builder.Default
+    private boolean deleted = false;
+
+    /**
+     * Date Deleted
+     */
+    @Column(name = "DELETED_AT")
+    private LocalDateTime deletedAt;
+
+    /**
+     * Creation Timestamp
+     */
+    @Column(
+            name = "CREATED_AT",
+            nullable = false,
+            updatable = false
+    )
+    private LocalDateTime createdAt;
+
+    /**
+     * Last Updated Timestamp
+     */
+    @Column(name = "UPDATED_AT")
+    private LocalDateTime updatedAt;
+
+    /**
+     * Optimistic Locking
+     */
+    @Version
+    @Column(name = "VERSION")
+    private Long version;
+
+    @PrePersist
+    public void prePersist() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        this.createdAt = now;
+        this.updatedAt = now;
+
+        if (this.status == null) {
+            this.status = LedgerStatus.ACTIVE;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+
+        this.updatedAt = LocalDateTime.now();
+
+    }
 
 }

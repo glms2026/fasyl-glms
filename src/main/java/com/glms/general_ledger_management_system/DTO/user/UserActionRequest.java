@@ -1,28 +1,26 @@
-package com.glms.general_ledger_management_system.DTO.role;
+package com.glms.general_ledger_management_system.DTO.user;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Set;
-
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssignPermissionRequest {
+public class UserActionRequest {
 
-    @NotEmpty(message = "At least one permission must be provided")
-    private Set<String> permissions;
-
+    /**
+     * Business justification supplied by the Maker for the
+     * controlled user-management action.
+     */
     @NotBlank(message = "Reason is required")
     @Size(max = 1000, message = "Reason cannot exceed 1000 characters")
     private String reason;
-
 }

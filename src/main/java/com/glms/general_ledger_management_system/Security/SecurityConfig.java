@@ -1,277 +1,345 @@
 package com.glms.general_ledger_management_system.Security;
 
-import com.glms.general_ledger_management_system.Security.JwtAuthenticationEntryPoint;
-import com.glms.general_ledger_management_system.Security.JwtAuthenticationFilter;
 import com.glms.general_ledger_management_system.Service.CustomUserDetailsService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.http.HttpMethod;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
-
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
-
 
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    private final PasswordChangeFilter passwordChangeFilter;
 
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
     private final CustomUserDetailsService userDetailsService;
 
-
-
+    /**
+     * =========================================================
+     * SECURITY FILTER CHAIN
+     * =========================================================
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
     ) throws Exception {
 
-
         http
 
-                // Disable CSRF because JWT is stateless
-                .csrf(csrf -> csrf.disable())
-
-
-                // CORS Configuration
-                .cors(cors -> cors.configurationSource(request -> {
-
-                    CorsConfiguration configuration =
-                            new CorsConfiguration();
-
-
-                    configuration.setAllowedOriginPatterns(
-                            List.of("*")
-                    );
-
-
-                    configuration.setAllowedMethods(
-                            List.of(
-                                    "GET",
-                                    "POST",
-                                    "PUT",
-                                    "DELETE",
-                                    "PATCH",
-                                    "OPTIONS"
-                            )
-                    );
-
-
-                    configuration.setAllowedHeaders(
-                            List.of("*")
-                    );
-
-
-                    configuration.setAllowCredentials(true);
-
-
-                    return configuration;
-
-                }))
-
-
-                // JWT does not use sessions
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
+                /*
+                 * =================================================
+                 * CSRF
+                 * =================================================
+                 *
+                 * JWT authentication is stateless.
+                 */
+                .csrf(
+                        csrf -> csrf.disable()
                 )
 
+                /*
+                 * =================================================
+                 * CORS
+                 * =================================================
+                 */
+                .cors(
+                        cors ->
+                                cors.configurationSource(
+                                        request -> {
 
-                // Handle unauthorized requests
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(
-                                authenticationEntryPoint
-                        )
+                                            CorsConfiguration configuration =
+                                                    new CorsConfiguration();
+
+                                            /*
+                                             * Development configuration.
+                                             *
+                                             * In production, replace "*"
+                                             * with trusted frontend origins.
+                                             */
+                                            configuration
+                                                    .setAllowedOriginPatterns(
+                                                            List.of("*")
+                                                    );
+
+                                            configuration
+                                                    .setAllowedMethods(
+                                                            List.of(
+                                                                    "GET",
+                                                                    "POST",
+                                                                    "PUT",
+                                                                    "PATCH",
+                                                                    "DELETE",
+                                                                    "OPTIONS"
+                                                            )
+                                                    );
+
+                                            configuration
+                                                    .setAllowedHeaders(
+                                                            List.of("*")
+                                                    );
+
+                                            configuration
+                                                    .setAllowCredentials(
+                                                            true
+                                                    );
+
+                                            return configuration;
+                                        }
+                                )
                 )
 
-
-                // Authorization Rules
-                .authorizeHttpRequests(auth -> auth
-
-
-                        // Authentication endpoints
-                        .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
-                        )
-                        .permitAll()
-
-
-                        // Swagger
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        )
-                        .permitAll()
-
-
-
-                        // Admin APIs
-                        .requestMatchers(
-                                "/api/admin/**"
-                        )
-                        .hasRole("ADMIN")
-
-
-                        .requestMatchers(
-                                "/api/users/**"
-                        )
-                        .hasRole("ADMIN")
-
-
-                        .requestMatchers(
-                                "/api/roles/**"
-                        )
-                        .hasRole("ADMIN")
-
-
-                        .requestMatchers(
-                                "/api/permissions/**"
-                        )
-                        .hasRole("ADMIN")
-
-
-
-                        // GLMS Business APIs
-                        .requestMatchers(
-                                "/api/ledgers/**"
-                        )
-                        .hasAnyRole(
-                                "ADMIN",
-                                "USER"
-                        )
-
-
-                        .requestMatchers(
-                                "/api/accounts/**"
-                        )
-                        .hasAnyRole(
-                                "ADMIN",
-                                "USER"
-                        )
-
-
-                        .requestMatchers(
-                                "/api/journal-entries/**"
-                        )
-                        .hasAnyRole(
-                                "ADMIN",
-                                "USER"
-                        )
-
-
-
-                        // Allow browser preflight requests
-                        .requestMatchers(
-                                HttpMethod.OPTIONS,
-                                "/**"
-                        )
-                        .permitAll()
-
-
-
-                        // All other endpoints require login
-                        .anyRequest()
-                        .authenticated()
-
+                /*
+                 * =================================================
+                 * SESSION MANAGEMENT
+                 * =================================================
+                 */
+                .sessionManagement(
+                        session ->
+                                session.sessionCreationPolicy(
+                                        SessionCreationPolicy.STATELESS
+                                )
                 )
 
+                /*
+                 * =================================================
+                 * EXCEPTION HANDLING
+                 * =================================================
+                 */
+                .exceptionHandling(
+                        exception ->
+                                exception.authenticationEntryPoint(
+                                        authenticationEntryPoint
+                                )
+                )
 
+                /*
+                 * =================================================
+                 * AUTHORIZATION
+                 * =================================================
+                 */
+                .authorizeHttpRequests(
+                        auth -> auth
 
-                // Authentication Provider
+                                /*
+                                 * =================================
+                                 * AUTHENTICATION ENDPOINTS
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/auth/login",
+                                        "/api/auth/forgot-password",
+                                        "/api/auth/reset-password",
+                                        "/error"
+                                )
+                                .permitAll()
+
+                                /*
+                                 * =================================
+                                 * SWAGGER / OPENAPI
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**",
+                                        "/swagger-resources/**",
+                                        "/webjars/**"
+                                )
+                                .permitAll()
+
+                                /*
+                                 * =================================
+                                 * CORS PREFLIGHT
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        HttpMethod.OPTIONS,
+                                        "/**"
+                                )
+                                .permitAll()
+
+                                /*
+                                 * =================================
+                                 * USER MANAGEMENT
+                                 * =================================
+                                 *
+                                 * Fine-grained permissions are
+                                 * enforced by @PreAuthorize.
+                                 */
+                                .requestMatchers(
+                                        "/api/users/**"
+                                )
+                                .authenticated()
+
+                                /*
+                                 * =================================
+                                 * ROLE MANAGEMENT
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/roles/**"
+                                )
+                                .authenticated()
+
+                                /*
+                                 * =================================
+                                 * PERMISSION MANAGEMENT
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/permissions/**"
+                                )
+                                .authenticated()
+
+                                /*
+                                 * =================================
+                                 * GENERAL LEDGER
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/ledgers/**"
+                                )
+                                .authenticated()
+
+                                /*
+                                 * =================================
+                                 * ACCOUNTS
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/accounts/**"
+                                )
+                                .authenticated()
+
+                                /*
+                                 * =================================
+                                 * JOURNAL ENTRIES
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/journal-entries/**"
+                                )
+                                .authenticated()
+
+                                .requestMatchers(
+                                        "/api/user-approval-requests/**"
+                                )
+                                .authenticated()
+
+                                /*
+                                 * =================================
+                                 * ADMIN APIs
+                                 * =================================
+                                 */
+                                .requestMatchers(
+                                        "/api/admin/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                /*
+                                 * =================================
+                                 * EVERYTHING ELSE
+                                 * =================================
+                                 */
+                                .anyRequest()
+                                .authenticated()
+                )
+
+                /*
+                 * =================================================
+                 * AUTHENTICATION PROVIDER
+                 * =================================================
+                 */
                 .authenticationProvider(
                         authenticationProvider()
                 )
 
-
-                // JWT Filter
+                /*
+                 * =================================================
+                 * JWT FILTER
+                 * =================================================
+                 */
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                );
+                )
 
+                /*
+                 * =================================================
+                 * MANDATORY PASSWORD CHANGE
+                 * =================================================
+                 *
+                 * Runs after JWT authentication so it can inspect
+                 * the authenticated user's mustChangePassword flag.
+                 */
+                .addFilterAfter(
+                        passwordChangeFilter,
+                        JwtAuthenticationFilter.class
+                );
 
         return http.build();
     }
 
-
-
-
+    /**
+     * =========================================================
+     * AUTHENTICATION PROVIDER
+     * =========================================================
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
 
-
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(userDetailsService);
-
-
-//        provider.
-//                setUserDetailsService(
-//                userDetailsService
-//        );
-
+                new DaoAuthenticationProvider(
+                        userDetailsService
+                );
 
         provider.setPasswordEncoder(
                 passwordEncoder()
         );
 
-
         return provider;
     }
 
-
-
-
+    /**
+     * =========================================================
+     * PASSWORD ENCODER
+     * =========================================================
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
 
         return new BCryptPasswordEncoder();
-
     }
 
-
-
-
+    /**
+     * =========================================================
+     * AUTHENTICATION MANAGER
+     * =========================================================
+     */
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
-
     ) throws Exception {
 
-
         return configuration.getAuthenticationManager();
-
     }
-
 }

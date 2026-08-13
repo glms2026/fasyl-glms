@@ -40,8 +40,10 @@ public class Role {
 
 
     @Column(
+            name = "NAME",
             unique = true,
-            nullable = false
+            nullable = false,
+            length = 50
     )
     private String name;
 
@@ -76,8 +78,13 @@ public class Role {
             inverseJoinColumns =
             @JoinColumn(
                     name = "permission_id"
-            )
+            ),
+
+    uniqueConstraints = {
+                    @UniqueConstraint( name = "UK_ROLE_PERMISSION",
+                            columnNames = { "ROLE_ID", "PERMISSION_ID" } ) }
     )
+    @Builder.Default
     private Set<Permission> permissions =
             new HashSet<>();
 

@@ -16,6 +16,8 @@ public interface RoleRepository
             String name
     );
 
+    Optional<Role> findByNameIgnoreCase(String name);
+
     /**
      * Check If Role Exists
      */

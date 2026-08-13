@@ -74,6 +74,18 @@ public class JwtService {
 
                 .subject(username)
 
+                /*
+                 * Unique token ID.
+                 *
+                 * JWT numeric dates are second-precision, so two
+                 * logins within the same second would otherwise
+                 * produce byte-identical tokens (duplicate rows in
+                 * the token table, breaking findByToken).
+                 */
+                .id(
+                        java.util.UUID.randomUUID().toString()
+                )
+
                 .issuedAt(
                         new Date()
                 )

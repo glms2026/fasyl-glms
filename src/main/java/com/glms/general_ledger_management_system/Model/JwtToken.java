@@ -26,7 +26,8 @@ public class JwtToken {
 
 
     @Column(
-            length = 500
+            columnDefinition = "TEXT",
+            nullable = false
     )
     private String token;
 

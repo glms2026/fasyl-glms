@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Set;
 
 @Getter
@@ -31,6 +32,19 @@ public class UserResponse {
     private Set<String> roles;
 
     private boolean active;
+
+    private Integer failedLoginAttempts;
+
+    private LocalDateTime lockoutTime;
+
+    private ZonedDateTime suspendedAt;
+    private String suspendedBy;
+
+    private ZonedDateTime lockedAt;
+
+    private String lockedBy;
+
+    private String lockReason;
 
     private LocalDateTime createdAt;
 

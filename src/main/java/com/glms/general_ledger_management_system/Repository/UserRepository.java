@@ -48,6 +48,36 @@ public interface UserRepository
             Pageable pageable
     );
 
+    Optional<User> findByUsernameIgnoreCase(String username);
+
+    Optional<User> findByEmailIgnoreCase(String email);
+
+
+    boolean existsByUsernameIgnoreCase(String username);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+
+    Page<User> findByStatusAndIdNot(
+            UserStatus status,
+            Long userId,
+            Pageable pageable
+    );
+
+
+
+    @Query(""" 
+SELECT
+ CASE WHEN COUNT(u) > 0 THEN true ELSE false END 
+ FROM User u 
+ JOIN u.roles r 
+ WHERE u.id = :userId AND UPPER(r.name) = UPPER(:roleName) """)
+    boolean hasRole(
+            Long userId,
+            String roleName
+    );
+
+
 
 
     /**

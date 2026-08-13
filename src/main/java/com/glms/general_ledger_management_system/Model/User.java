@@ -22,7 +22,11 @@ public class User {
 
     @Id
     @GeneratedValue(
-            strategy = GenerationType.SEQUENCE
+            strategy = GenerationType.SEQUENCE,
+            generator = "user_seq" )
+    @SequenceGenerator(
+            name = "user_seq",
+            sequenceName = "USER_SEQ", allocationSize = 1
     )
     private Long id;
 
@@ -58,6 +62,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
 
@@ -93,6 +98,27 @@ public class User {
     private String lockedBy;
 
 
+    /**
+     * ============================================================
+     * MANDATORY PASSWORD CHANGE
+     * ============================================================
+     *
+     * When true, the user must change their password before
+     * accessing any other application endpoint.
+     *
+     * Set to true for every new user created through the
+     * Maker/Checker workflow.
+     *
+     * Cleared after a successful password change.
+     */
+    @Column(
+            name = "MUST_CHANGE_PASSWORD",
+            nullable = false
+    )
+    @Builder.Default
+    private boolean mustChangePassword = false;
+
+
 
 
     @ManyToMany(
@@ -109,21 +135,27 @@ public class User {
             inverseJoinColumns =
             @JoinColumn(
                     name="role_id"
-            )
+            ),
+            uniqueConstraints = {
+                    @UniqueConstraint( name = "UK_USER_ROLE",
+                            columnNames = { "USER_ID", "ROLE_ID" } ) }
     )
     private Set<Role> roles =
             new HashSet<>();
 
 
     @PrePersist
-    public void prePersist() {
-        createdAt = LocalDateTime.now();
-    }
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        if (failedLoginAttempts == null) {
+            failedLoginAttempts = 0; }
+        if (status == null)
+        { status = UserStatus.ACTIVE; } }
+
 
     @PreUpdate
-    public void preUpdate() {
+    protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-
 }

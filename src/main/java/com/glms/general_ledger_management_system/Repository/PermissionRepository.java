@@ -25,5 +25,7 @@ public interface PermissionRepository
 
     Optional<Permission> findByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCase(String name);
+
 
 }

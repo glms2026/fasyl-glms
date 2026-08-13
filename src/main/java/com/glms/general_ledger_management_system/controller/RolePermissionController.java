@@ -2,18 +2,20 @@ package com.glms.general_ledger_management_system.controller;
 
 import com.glms.general_ledger_management_system.DTO.common.ApiResponse;
 import com.glms.general_ledger_management_system.DTO.role.AssignPermissionRequest;
-import com.glms.general_ledger_management_system.DTO.role.AssignPermissionResponse;
 import com.glms.general_ledger_management_system.DTO.role.PermissionResponse;
+import com.glms.general_ledger_management_system.DTO.user.UserApprovalRequestResponse;
 import com.glms.general_ledger_management_system.Model.Permission;
 import com.glms.general_ledger_management_system.Model.Role;
+import com.glms.general_ledger_management_system.Model.UserApprovalRequest;
 import com.glms.general_ledger_management_system.Service.RolePermissionService;
+import com.glms.general_ledger_management_system.Service.UserApprovalRequestService;
 
 import jakarta.validation.Valid;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -32,146 +34,263 @@ public class RolePermissionController {
 
     private final RolePermissionService rolePermissionService;
 
-
-//    @PutMapping("/{roleId}/permissions")
-////    @PreAuthorize("hasAuthority('ROLE_ASSIGN_PERMISSION')")
-//    public ResponseEntity<Void> assignPermissions(
-//
-//            @PathVariable Long roleId,
-//
-//            @Valid @RequestBody AssignPermissionRequest request
-//
-//    ) {
-//
-//        rolePermissionService.assignPermissions(
-//                roleId,
-//                request
-//        );
-//
-//        return ResponseEntity.ok().build();
-//    }
+    private final UserApprovalRequestService approvalRequestService;
 
 
+    /**
+     * ============================================================
+     * ASSIGN PERMISSIONS TO ROLE
+     * ============================================================
+     *
+     * MAKER operation.
+     *
+     * Creates an ASSIGN_PERMISSION approval request. The
+     * permissions are assigned to the role only after approval.
+     */
+    @PutMapping("/{roleId}/permissions")
+    @PreAuthorize(
+            "hasAnyRole('CONTROL', 'ADMIN')"
+    )
+    public ResponseEntity<UserApprovalRequestResponse> assignPermissions(
 
-@PutMapping("/{roleId}/permissions")
-public ResponseEntity<AssignPermissionResponse> assignPermissions(
+            @PathVariable
+            @Positive(message = "Role ID must be greater than zero")
+            Long roleId,
 
-        @PathVariable Long roleId,
-        @Valid @RequestBody AssignPermissionRequest request
-) {
+            @Valid
+            @RequestBody
+            AssignPermissionRequest request
+    ) {
 
-    Role role = rolePermissionService.assignPermissions(roleId, request);
+        UserApprovalRequest approvalRequest =
+                approvalRequestService.createRolePermissionAssignmentRequest(
+                        roleId,
+                        request.getPermissions(),
+                        request.getReason()
+                );
 
-    AssignPermissionResponse response =
-            AssignPermissionResponse.builder()
-                    .roleId(role.getId())
-                    .roleName(role.getName())
-                    .permissions(
-                            role.getPermissions()
-                                    .stream()
-                                    .map(Permission::getName)
-                                    .collect(Collectors.toSet())
-                    )
-                    .message("Permissions assigned successfully")
-                    .build();
-
-    return ResponseEntity.ok(response);
-}
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(toResponse(approvalRequest));
+    }
 
 
+    /**
+     * ============================================================
+     * REMOVE PERMISSION FROM ROLE
+     * ============================================================
+     *
+     * MAKER operation.
+     *
+     * Creates a REMOVE_PERMISSION approval request. The
+     * permission is removed from the role only after approval.
+     */
+    @DeleteMapping("/{roleId}/permissions/{permissionName}")
+    @PreAuthorize(
+            "hasAnyRole('CONTROL', 'ADMIN')"
+    )
+    public ResponseEntity<UserApprovalRequestResponse> removePermission(
+
+            @PathVariable
+            @Positive(message = "Role ID must be greater than zero")
+            Long roleId,
+
+            @PathVariable
+            @NotBlank(message = "Permission name is required")
+            String permissionName,
+
+            @RequestParam(
+                    name = "reason",
+                    required = false,
+                    defaultValue = "Permission removal request"
+            )
+            String reason
+    ) {
+
+        UserApprovalRequest approvalRequest =
+                approvalRequestService.createRolePermissionRemovalRequest(
+                        roleId,
+                        permissionName,
+                        reason
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(toResponse(approvalRequest));
+    }
+
+
+    /**
+     * ============================================================
+     * CLEAR ALL PERMISSIONS FROM ROLE
+     * ============================================================
+     *
+     * ADMIN-only direct operation.
+     */
     @DeleteMapping("/{roleId}/permissions")
-//    @PreAuthorize("hasAuthority('ROLE_ASSIGN_PERMISSION')")
-//    public ResponseEntity<Void> clearPermissions(
-//
-//            @PathVariable Long roleId
-//
-//    ) {
-//
-//        rolePermissionService.clearPermissions(roleId);
-//
-//        return ResponseEntity.noContent().build();
-//    }
-
+    @PreAuthorize(
+            "hasRole('ADMIN')"
+    )
     public ResponseEntity<ApiResponse> clearPermissions(
 
             @PathVariable
             @Positive(message = "Role ID must be greater than zero")
             Long roleId
-
     ) {
 
         rolePermissionService.clearPermissions(roleId);
 
-        ApiResponse response = ApiResponse.builder()
-                .success(true)
-                .message("All permissions removed successfully.")
-                .build();
+        ApiResponse response =
+                ApiResponse.builder()
+                        .success(true)
+                        .message("All permissions removed successfully.")
+                        .build();
 
         return ResponseEntity.ok(response);
-
     }
 
 
-
-    @DeleteMapping("/{roleId}/permissions/{permissionName}")
-    public ResponseEntity<ApiResponse> removePermission(
-            @PathVariable Long roleId,
-            @PathVariable String permissionName
+    /**
+     * ============================================================
+     * GET ROLE PERMISSIONS
+     * ============================================================
+     *
+     * Read-only - visible to CONTROL, AUTHORIZER and ADMIN.
+     */
+    @GetMapping("/{roleId}/permissions")
+    @PreAuthorize(
+            "hasAnyRole('CONTROL', 'AUTHORIZER', 'ADMIN')"
+    )
+    public ResponseEntity<List<PermissionResponse>> getPermissions(
+            @PathVariable Long roleId
     ) {
 
-        Role role = rolePermissionService.removePermission(
-                roleId,
-                permissionName
-        );
+        Role role =
+                rolePermissionService.getRole(roleId);
 
-        ApiResponse response = ApiResponse.builder()
-                .success(true)
-                .message("Permission '" + permissionName +
-                        "' removed from role '" + role.getName() + "'.")
-                .build();
+        List<PermissionResponse> response =
+                role.getPermissions()
+                        .stream()
+                        .map(permission ->
+                                PermissionResponse.builder()
+                                        .id(permission.getId())
+                                        .name(permission.getName())
+                                        .description(permission.getDescription())
+                                        .build()
+                        )
+                        .sorted(Comparator.comparing(PermissionResponse::getId))
+                        .toList();
 
         return ResponseEntity.ok(response);
     }
 
 
-//    @GetMapping("/{roleId}/permissions")
-////    @PreAuthorize("hasAuthority('ROLE_READ')")
-//    public ResponseEntity<Set<Permission>> getPermissions(
-//
-//            @PathVariable Long roleId
-//
-//    ) {
-//
-//        Role role =
-//                rolePermissionService.getRole(roleId);
-//
-//
-//        return ResponseEntity.ok(
-//                role.getPermissions()
-//        );
-//    }
+    /**
+     * ============================================================
+     * ENTITY -> RESPONSE DTO
+     * ============================================================
+     */
+    private UserApprovalRequestResponse toResponse(
+            UserApprovalRequest request
+    ) {
+
+        if (request == null) {
+
+            return null;
+        }
 
 
+        return UserApprovalRequestResponse.builder()
 
+                .id(
+                        request.getId()
+                )
 
-@GetMapping("/{roleId}/permissions")
-public ResponseEntity<List<PermissionResponse>> getPermissions(
-        @PathVariable Long roleId
-) {
+                .makerId(
+                        request.getMaker() != null
+                                ? request.getMaker().getId()
+                                : null
+                )
 
-    Role role = rolePermissionService.getRole(roleId);
+                .makerUsername(
+                        request.getMaker() != null
+                                ? request.getMaker().getUsername()
+                                : null
+                )
 
-    List<PermissionResponse> response = role.getPermissions()
-            .stream()
-            .map(permission -> PermissionResponse.builder()
-                    .id(permission.getId())
-                    .name(permission.getName())
-                    .description(permission.getDescription())
-                    .build())
-            .sorted(Comparator.comparing(PermissionResponse::getId))
-            .toList();
+                .authorizerId(
+                        request.getAuthorizer() != null
+                                ? request.getAuthorizer().getId()
+                                : null
+                )
 
-    return ResponseEntity.ok(response);
-}
+                .authorizerUsername(
+                        request.getAuthorizer() != null
+                                ? request.getAuthorizer().getUsername()
+                                : null
+                )
 
+                .action(
+                        request.getActionType()
+                )
+
+                .status(
+                        request.getStatus()
+                )
+
+                .roleNames(
+                        request.getRoles() != null
+                                ? Set.copyOf(
+                                request.getRoles()
+                        )
+                                : Set.of()
+                )
+
+                .permissions(
+                        request.getPermissions() != null
+                                ? Set.copyOf(
+                                request.getPermissions()
+                        )
+                                : Set.of()
+                )
+
+                .reason(
+                        request.getReason()
+                )
+
+                .remark(
+                        request.getAuthorizerRemark()
+                )
+
+                .createdAt(
+                        request.getRequestedAt() != null
+                                ? request.getRequestedAt()
+                                .toLocalDateTime()
+                                : null
+                )
+
+                .approvedAt(
+                        request.getStatus() != null
+                                && request.getAuthorizedAt() != null
+                                && request.getStatus()
+                                .name()
+                                .equals("APPROVED")
+                                ? request.getAuthorizedAt()
+                                .toLocalDateTime()
+                                : null
+                )
+
+                .rejectedAt(
+                        request.getStatus() != null
+                                && request.getAuthorizedAt() != null
+                                && request.getStatus()
+                                .name()
+                                .equals("REJECTED")
+                                ? request.getAuthorizedAt()
+                                .toLocalDateTime()
+                                : null
+                )
+
+                .build();
+    }
 }

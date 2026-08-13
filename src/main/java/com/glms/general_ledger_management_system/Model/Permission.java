@@ -45,6 +45,7 @@ public class Permission {
 
 
     @Column(
+            name = "NAME",
             nullable = false,
             unique = true,
             length = 100
@@ -55,6 +56,7 @@ public class Permission {
 
 
     @Column(
+            name = "DESCRIPTION",
             length = 500
     )
     private String description;

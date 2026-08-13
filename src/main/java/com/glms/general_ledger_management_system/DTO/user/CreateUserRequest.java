@@ -3,6 +3,7 @@ package com.glms.general_ledger_management_system.DTO.user;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 //import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
 import lombok.AllArgsConstructor;
@@ -10,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -39,5 +42,15 @@ public class CreateUserRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
+
+    @NotEmpty(message = "At least one role must be assigned")
+    private Set<String> roles;
+
+    @NotEmpty(message = "At least one permission is required")
+    private Set<String> permissions;
+
+    @NotBlank
+    @Size(max = 1000)
+    private String reason;
 
 }
