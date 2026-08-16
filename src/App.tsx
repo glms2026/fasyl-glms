@@ -40,9 +40,6 @@ const RolesPermissionsPage = lazy(
   () => import("@/domains/users/pages/RolesPermissionsPage"),
 );
 const AuditLogsPage = lazy(() => import("@/domains/audit/pages/AuditLogsPage"));
-
-// TEMPORARY dev preview — remove together with src/__devpreview.tsx.
-const DevPreview = lazy(() => import("./__devpreview"));
 const ChangePasswordPage = lazy(
   () => import("@/domains/auth/pages/ChangePasswordPage"),
 );
@@ -111,11 +108,6 @@ export default function App() {
               </Route>
             </Route>
           </Route>
-
-          {/* TEMPORARY dev preview — remove with src/__devpreview.tsx */}
-          {import.meta.env.DEV && (
-            <Route path="/__dev-loader" element={<DevPreview />} />
-          )}
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFoundPage />} />
