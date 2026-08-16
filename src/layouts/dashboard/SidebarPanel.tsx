@@ -4,6 +4,7 @@ import { Tooltip } from "@/components/ui/Tooltips";
 import { config } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import logo from "@/domains/dashboard/assests/FasylLogo.svg";
+import { useAccess } from "@/domains/users/hooks/useAccess";
 
 import { NavItem } from "./NavItem";
 import { primaryNavigation } from "./navigation";
@@ -27,6 +28,12 @@ export function SidebarPanel({
   onNavigate,
   pendingApprovals = 0,
 }: SidebarPanelProps) {
+  const { isAdmin } = useAccess();
+
+  // Admin-only entries (audit trail) are dropped for every other role so
+  // the sidebar never advertises a screen the backend would reject.
+  const items = primaryNavigation.filter((item) => !item.adminOnly || isAdmin);
+
   const actionClass = cn(
     "flex h-11 items-center rounded-xl text-sm font-medium text-white/80 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/60",
     collapsed ? "size-11 justify-center" : "w-full gap-3 px-4",
@@ -82,7 +89,7 @@ export function SidebarPanel({
           collapsed ? "items-center px-2" : "px-4",
         )}
       >
-        {primaryNavigation.map((item) => (
+        {items.map((item) => (
           <NavItem
             key={item.href}
             item={item}

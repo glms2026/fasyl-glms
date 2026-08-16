@@ -8,6 +8,7 @@ import { useAuthStore } from "@/domains/auth/stores/authStore";
 import MustChangePassword from "./routes/MustChangePassword";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
+import RequireAdmin from "./routes/RequireAdmin";
 import RequireMaker from "./routes/RequireMaker";
 import { RouteLoader } from "./routes/RouteLoader";
 
@@ -38,6 +39,10 @@ const ApprovalsPage = lazy(
 const RolesPermissionsPage = lazy(
   () => import("@/domains/users/pages/RolesPermissionsPage"),
 );
+const AuditLogsPage = lazy(() => import("@/domains/audit/pages/AuditLogsPage"));
+
+// TEMPORARY dev preview — remove together with src/__devpreview.tsx.
+const DevPreview = lazy(() => import("./__devpreview"));
 const ChangePasswordPage = lazy(
   () => import("@/domains/auth/pages/ChangePasswordPage"),
 );
@@ -93,6 +98,11 @@ export default function App() {
                   element={<RolesPermissionsPage />}
                 />
 
+                {/* The audit trail is ADMIN-only, end to end. */}
+                <Route element={<RequireAdmin />}>
+                  <Route path="/audit-logs" element={<AuditLogsPage />} />
+                </Route>
+
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route
                   path="/change-password"
@@ -101,6 +111,11 @@ export default function App() {
               </Route>
             </Route>
           </Route>
+
+          {/* TEMPORARY dev preview — remove with src/__devpreview.tsx */}
+          {import.meta.env.DEV && (
+            <Route path="/__dev-loader" element={<DevPreview />} />
+          )}
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFoundPage />} />

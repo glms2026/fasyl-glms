@@ -47,6 +47,27 @@ function mockUsersPage() {
   };
 }
 
+function mockAuditPage() {
+  const actions = ["USER_CREATE", "ASSIGN_ROLE", "LOGIN", "USER_LOCK"];
+  const content = Array.from({ length: 8 }).map((_, index) => ({
+    id: index + 1,
+    username: index % 2 === 0 ? "aokonkwo" : "jdoe",
+    action: actions[index % actions.length],
+    description: `Sample audit description ${index + 1}`,
+    createdAt: new Date(Date.now() - index * 3_600_000).toISOString(),
+  }));
+
+  return {
+    content,
+    page: {
+      size: 25,
+      number: 0,
+      totalElements: content.length,
+      totalPages: 1,
+    },
+  };
+}
+
 const emptyPage = {
   content: [],
   totalElements: 0,
@@ -80,6 +101,10 @@ vi.mock("@/lib/apiClient", () => ({
 
       if (url.includes("/users")) {
         return Promise.resolve({ data: mockUsersPage() });
+      }
+
+      if (url.includes("/admin/audit-logs")) {
+        return Promise.resolve({ data: mockAuditPage() });
       }
 
       return Promise.resolve({ data: mockProfile });
@@ -163,7 +188,83 @@ describe("app smoke", () => {
       "User Management",
       "Approvals",
       "Roles & Permissions",
+      "Audit Logs",
     ]);
+  });
+
+  it("renders the audit trail for an administrator", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/audit-logs");
+
+    render(<App />);
+
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole("heading", { name: /audit log/i }),
+        ).toBeDefined(),
+      { timeout: 5000 },
+    );
+
+    // Timeline rows carry descriptive labels: "View USER_CREATE event by …".
+    await waitFor(
+      () =>
+        expect(
+          screen.getAllByRole("button", { name: /view .* event by/i }).length,
+        ).toBeGreaterThan(0),
+      { timeout: 5000 },
+    );
+  });
+
+  it("keeps the audit trail out of reach for non-admin roles", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/audit-logs");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["AUTHORIZER"] },
+          });
+        }
+
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyPage });
+        }
+
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      // The admin-only guard bounces the visitor back to the dashboard.
+      await waitFor(
+        () => expect(window.location.pathname).toBe("/dashboard"),
+        { timeout: 5000 },
+      );
+
+      // And the sidebar never advertises the entry.
+      const sidebar = await waitFor(
+        () => screen.getByRole("navigation", { name: /main/i }),
+        { timeout: 5000 },
+      );
+      const labels = Array.from(sidebar.querySelectorAll("a")).map(
+        (link) => link.textContent,
+      );
+
+      expect(labels).not.toContain("Audit Logs");
+    } finally {
+      if (original) {
+        mockedGet.mockImplementation(original);
+      }
+    }
   });
 
   it("locks a first-login user to the mandatory password change screen", async () => {

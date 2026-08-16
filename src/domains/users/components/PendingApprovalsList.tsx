@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Hourglass } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
-import { formatRelative, titleCase } from "@/lib/format";
+import { formatDateTime, titleCase } from "@/lib/format";
 
 import { ApprovalStatusBadge } from "./ApprovalStatusBadge";
 import type { UserApprovalRequest } from "../types";
@@ -59,7 +59,7 @@ export function PendingApprovalsList({
 
             <p className="text-xs text-neutral-500">
               Requested by {request.makerUsername} ·{" "}
-              {formatRelative(request.createdAt)}
+              {formatDateTime(request.createdAt)}
             </p>
           </div>
 

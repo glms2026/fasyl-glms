@@ -2,6 +2,7 @@ import {
   ClipboardCheck,
   LayoutDashboard,
   Plus,
+  ScrollText,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
@@ -13,6 +14,8 @@ export interface NavigationItem {
   icon: LucideIcon;
   /** Keeps the item active on nested routes such as /users/new. */
   matchNested?: boolean;
+  /** Hidden from every role but ADMIN (backend: /api/admin/*). */
+  adminOnly?: boolean;
 }
 
 /**
@@ -46,5 +49,11 @@ export const primaryNavigation: NavigationItem[] = [
     title: "Roles & Permissions",
     href: "/roles-permissions",
     icon: ShieldCheck,
+  },
+  {
+    title: "Audit Logs",
+    href: "/audit-logs",
+    icon: ScrollText,
+    adminOnly: true,
   },
 ];

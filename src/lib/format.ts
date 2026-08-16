@@ -20,10 +20,42 @@ export function titleCase(value: string): string {
     .join(" ");
 }
 
+/**
+ * The backend is a Spring Boot app that serialises `LocalDateTime` fields
+ * without a zone suffix (e.g. "2026-08-16T19:36:00"), and the server runs
+ * on UTC. JavaScript parses such strings as *local* time, so they land an
+ * hour off for any user east of UTC. This normalises them to UTC before
+ * formatting; strings that already carry a zone ("Z" or a ±HH:MM offset)
+ * pass through untouched.
+ */
+const HAS_ZONE_SUFFIX = /(?:Z|[+-]\d{2}:?\d{2})$/;
+
+function toUtcDate(value: string): Date {
+  const normalized =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) && !HAS_ZONE_SUFFIX.test(value)
+      ? `${value}Z`
+      : value;
+
+  return new Date(normalized);
+}
+
+/** Intl emits lowercase "am"/"pm" for some locales — display them uppercase. */
+const AM_PM = /\b(?:am|pm)\b/g;
+
+function withAmPm(value: string): string {
+  return value.replace(AM_PM, (match) => match.toUpperCase());
+}
+
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
   month: "short",
   year: "numeric",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
 });
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -32,12 +64,24 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hour12: true,
+});
+
+const dateTimeFullFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  timeZoneName: "short",
+  hour12: true,
 });
 
 export function formatDate(value?: string | null): string {
   if (!value) return "—";
 
-  const date = new Date(value);
+  const date = toUtcDate(value);
   if (Number.isNaN(date.getTime())) return "—";
 
   return dateFormatter.format(date);
@@ -46,16 +90,36 @@ export function formatDate(value?: string | null): string {
 export function formatDateTime(value?: string | null): string {
   if (!value) return "—";
 
-  const date = new Date(value);
+  const date = toUtcDate(value);
   if (Number.isNaN(date.getTime())) return "—";
 
-  return dateTimeFormatter.format(date);
+  return withAmPm(dateTimeFormatter.format(date));
+}
+
+/** Clock time only, e.g. "8:36 PM" — pairs with a day label for context. */
+export function formatTime(value?: string | null): string {
+  if (!value) return "—";
+
+  const date = toUtcDate(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return withAmPm(timeFormatter.format(date));
+}
+
+/** Seconds + timezone precision, for audit detail views. */
+export function formatDateTimeFull(value?: string | null): string {
+  if (!value) return "—";
+
+  const date = toUtcDate(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return withAmPm(dateTimeFullFormatter.format(date));
 }
 
 export function formatRelative(value?: string | null): string {
   if (!value) return "—";
 
-  const date = new Date(value);
+  const date = toUtcDate(value);
   if (Number.isNaN(date.getTime())) return "—";
 
   const seconds = Math.round((Date.now() - date.getTime()) / 1000);
