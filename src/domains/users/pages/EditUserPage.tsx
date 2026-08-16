@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,15 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorState } from "@/components/common/ErrorState";
 import { InlineAlert } from "@/components/common/InlineAlert";
-import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
 
-import { PermissionMatrix } from "../components/PermissionMatrix";
+import { ModuleHeader } from "../components/ModuleHeader";
 import { UserFormFields } from "../components/UserFormFields";
-import { rolePermissionPresets } from "../data/permissions";
 import { useUpdateUser, useUserQuery } from "../hooks/useUsers";
 import { editUserSchema, type EditUserFormValues } from "../schema";
-import type { UserRole, UserStatus } from "../types";
 
 export default function EditUserPage() {
   const navigate = useNavigate();
@@ -31,20 +28,17 @@ export default function EditUserPage() {
 
   const {
     register,
-    control,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors, isDirty },
   } = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserSchema),
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      lastName: "",
       username: "",
       email: "",
-      role: "VIEWER",
       status: "ACTIVE",
-      permissions: [],
     },
   });
 
@@ -53,30 +47,21 @@ export default function EditUserPage() {
     if (!user) return;
 
     reset({
-      fullName: user.fullName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       username: user.username,
       email: user.email,
-      role: user.role,
-      status: user.status,
-      permissions: user.permissions,
+      status: user.status as EditUserFormValues["status"],
     });
   }, [user, reset]);
 
   const updateUser = useUpdateUser({
-    onSuccess: (updated) => {
-      toast.success(`${updated.fullName}'s details have been saved.`);
-      navigate(`/users/${updated.id}`);
+    onSuccess: () => {
+      toast.success("Changes submitted for approval.");
+      navigate(`/users/${userId}`);
     },
     onError: setFormError,
   });
-
-  const applyRolePreset = (role: string) => {
-    const preset = rolePermissionPresets[role as UserRole];
-
-    if (preset) {
-      setValue("permissions", preset, { shouldValidate: true, shouldDirty: true });
-    }
-  };
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -84,12 +69,13 @@ export default function EditUserPage() {
     try {
       await updateUser.mutateAsync({
         id: userId,
-        fullName: values.fullName,
-        username: values.username,
-        email: values.email,
-        role: values.role as UserRole,
-        status: values.status as UserStatus,
-        permissions: values.permissions,
+        payload: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          username: values.username,
+          email: values.email,
+          status: values.status,
+        },
       });
     } catch {
       // Surfaced through formError by the onError callback.
@@ -109,22 +95,21 @@ export default function EditUserPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <Skeleton className="h-72 w-full rounded-2xl" />
-        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
-      <PageHeader
-        title={`Edit ${user?.fullName ?? "user"}`}
-        description="Update details, role and access for this account."
+      <ModuleHeader
+        title={`Edit ${user?.firstName ?? "user"}`}
+        description="Update details and status for this account. Changes are queued for approval."
         eyebrow={
           <Link
             to={`/users/${userId}`}
-            className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-neutral-800"
+            className="inline-flex items-center gap-1.5 text-sm text-white/70 transition-colors hover:text-white"
           >
             <ArrowLeft className="size-3.5" />
             Back to profile
@@ -136,31 +121,9 @@ export default function EditUserPage() {
 
       <SectionCard
         title="Account details"
-        description="Changing the status here takes effect immediately."
+        description="Roles and permissions are managed separately — changing them queues their own approval request."
       >
-        <UserFormFields
-          register={register}
-          errors={errors}
-          showStatus
-          onRoleChange={applyRolePreset}
-        />
-      </SectionCard>
-
-      <SectionCard
-        title="Assigned permissions"
-        description="Fine-tune what this user can do beyond their role."
-      >
-        <Controller
-          name="permissions"
-          control={control}
-          render={({ field }) => (
-            <PermissionMatrix
-              value={field.value}
-              onChange={field.onChange}
-              error={errors.permissions?.message}
-            />
-          )}
-        />
+        <UserFormFields register={register} errors={errors} showStatus />
       </SectionCard>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -180,7 +143,7 @@ export default function EditUserPage() {
           disabled={updateUser.isPending || !isDirty}
         >
           {updateUser.isPending && <Spinner />}
-          Save changes
+          Submit for approval
         </Button>
       </div>
     </form>

@@ -11,6 +11,7 @@
 const ACCESS_TOKEN_KEY = "glms.accessToken";
 const REFRESH_TOKEN_KEY = "glms.refreshToken";
 const PERSIST_KEY = "glms.persist";
+const USERNAME_KEY = "glms.username";
 
 type Store = Storage;
 
@@ -36,6 +37,7 @@ export interface StoredSession {
   accessToken: string;
   refreshToken?: string | null;
   remember?: boolean;
+  username?: string;
 }
 
 export const tokenStorage = {
@@ -47,7 +49,16 @@ export const tokenStorage = {
     return read(REFRESH_TOKEN_KEY);
   },
 
-  setSession({ accessToken, refreshToken, remember = true }: StoredSession) {
+  getUsername(): string | null {
+    return read(USERNAME_KEY);
+  },
+
+  setSession({
+    accessToken,
+    refreshToken,
+    remember = true,
+    username,
+  }: StoredSession) {
     this.clear();
 
     const store: Store = remember ? localStorage : sessionStorage;
@@ -58,12 +69,17 @@ export const tokenStorage = {
     if (refreshToken) {
       store.setItem(REFRESH_TOKEN_KEY, refreshToken);
     }
+
+    if (username) {
+      store.setItem(USERNAME_KEY, username);
+    }
   },
 
   clear() {
     removeEverywhere(ACCESS_TOKEN_KEY);
     removeEverywhere(REFRESH_TOKEN_KEY);
     removeEverywhere(PERSIST_KEY);
+    removeEverywhere(USERNAME_KEY);
   },
 
   hasSession(): boolean {

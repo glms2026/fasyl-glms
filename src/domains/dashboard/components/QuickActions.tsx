@@ -2,11 +2,15 @@ import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight, KeyRound, Plus, UserPlus, Users } from "lucide-react";
 
+import { useAccess } from "@/domains/users/hooks/useAccess";
+
 interface QuickAction {
   label: string;
   description: string;
   href: string;
   icon: LucideIcon;
+  /** Only makers (CONTROL/ADMIN) may reach the destination. */
+  makerOnly?: boolean;
 }
 
 /** Every destination here is a mounted route — no dead links. */
@@ -22,6 +26,7 @@ const actions: QuickAction[] = [
     description: "Invite a colleague and set access",
     href: "/users/new",
     icon: UserPlus,
+    makerOnly: true,
   },
   {
     label: "Manage users",
@@ -38,9 +43,13 @@ const actions: QuickAction[] = [
 ];
 
 export function QuickActions() {
+  const { canMakeChanges } = useAccess();
+
+  const visible = actions.filter((action) => !action.makerOnly || canMakeChanges);
+
   return (
     <ul className="space-y-2">
-      {actions.map(({ label, description, href, icon: Icon }) => (
+      {visible.map(({ label, description, href, icon: Icon }) => (
         <li key={href}>
           <Link
             to={href}

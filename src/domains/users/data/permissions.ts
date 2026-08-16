@@ -1,139 +1,177 @@
-import type { PermissionGroup, UserRole } from "../types";
+import type { PermissionGroup } from "../types";
 
 /**
  * Permission catalogue rendered by the assignment matrix.
  *
- * The backend doesn't return permissions yet. When it does, replace this
- * constant with a fetched list — the matrix component already renders
- * whatever groups it's given.
+ * The backend exposes no standalone permission-catalogue endpoint — the
+ * names here mirror the permissions seeded by `PermissionInitializer` in
+ * `glms-backend`, and `GET /api/roles/{roleId}/permissions` is the live
+ * source of truth for what a role actually holds. The create-user and
+ * role-assignment forms submit these exact names, which the backend
+ * validates with `permissionRepository.findByNameIgnoreCase`.
  */
 export const permissionGroups: PermissionGroup[] = [
   {
-    key: "ledger",
-    label: "General ledger",
-    description: "Access to GL accounts and the chart of accounts.",
-    permissions: [
-      {
-        key: "gl.view",
-        label: "View GL accounts",
-        description: "Read ledger accounts and balances.",
-      },
-      {
-        key: "gl.create",
-        label: "Create GL accounts",
-        description: "Open new ledger accounts.",
-      },
-      {
-        key: "gl.edit",
-        label: "Edit GL accounts",
-        description: "Amend account details and classifications.",
-      },
-      {
-        key: "gl.close",
-        label: "Close GL accounts",
-        description: "Deactivate accounts with a zero balance.",
-      },
-    ],
-  },
-  {
-    key: "transactions",
-    label: "Transactions",
-    description: "Journal entries and postings.",
-    permissions: [
-      {
-        key: "txn.view",
-        label: "View transactions",
-        description: "Read journal entries and postings.",
-      },
-      {
-        key: "txn.post",
-        label: "Post entries",
-        description: "Submit journal entries for approval.",
-      },
-      {
-        key: "txn.approve",
-        label: "Approve entries",
-        description: "Authorise entries submitted by others.",
-      },
-      {
-        key: "txn.reverse",
-        label: "Reverse entries",
-        description: "Reverse a posted entry with an audit note.",
-      },
-    ],
-  },
-  {
-    key: "users",
+    key: "user-management",
     label: "User management",
-    description: "Accounts, roles and access control.",
+    description: "Create, update and control access to accounts.",
     permissions: [
       {
-        key: "users.view",
-        label: "View users",
-        description: "Browse the user directory.",
-      },
-      {
-        key: "users.create",
+        key: "USER_CREATE",
         label: "Create users",
-        description: "Add accounts and assign a starting role.",
+        description: "Create a new user",
       },
       {
-        key: "users.edit",
-        label: "Edit users",
-        description: "Change details, roles and permissions.",
+        key: "USER_UPDATE",
+        label: "Update users",
+        description: "Update an existing user",
       },
       {
-        key: "users.lock",
-        label: "Lock and suspend",
-        description: "Temporarily or indefinitely block access.",
+        key: "USER_DELETE",
+        label: "Delete users",
+        description: "Delete or permanently remove a user account",
       },
       {
-        key: "users.reset",
+        key: "USER_ACTIVATE",
+        label: "Activate accounts",
+        description: "Approve and activate a controlled user action",
+      },
+      {
+        key: "USER_DEACTIVATE",
+        label: "Deactivate accounts",
+        description: "Deactivate a user account",
+      },
+      {
+        key: "USER_SUSPEND",
+        label: "Suspend accounts",
+        description: "Suspend a user account",
+      },
+      {
+        key: "USER_UNSUSPEND",
+        label: "Unsuspend accounts",
+        description: "Remove suspension from a user account",
+      },
+      {
+        key: "USER_LOCK",
+        label: "Lock accounts",
+        description: "Lock a user account",
+      },
+      {
+        key: "USER_UNLOCK",
+        label: "Unlock accounts",
+        description: "Unlock a locked user account",
+      },
+      {
+        key: "PASSWORD_RESET",
         label: "Reset passwords",
-        description: "Trigger a password reset on another account.",
+        description: "Reset a user's password",
       },
     ],
   },
   {
-    key: "reporting",
-    label: "Reporting",
-    description: "Statements, exports and audit history.",
+    key: "roles-access",
+    label: "Roles & access",
+    description: "Role membership and role permission configuration.",
     permissions: [
       {
-        key: "reports.view",
-        label: "View reports",
-        description: "Open financial statements and summaries.",
+        key: "ASSIGN_ROLE",
+        label: "Assign roles",
+        description: "Assign roles to users",
       },
       {
-        key: "reports.export",
-        label: "Export reports",
-        description: "Download reports as CSV or PDF.",
+        key: "ASSIGN_PERMISSION",
+        label: "Assign permissions",
+        description: "Assign permissions to a role",
       },
       {
-        key: "audit.view",
-        label: "View audit trail",
-        description: "Inspect the full history of changes.",
+        key: "REMOVE_PERMISSION",
+        label: "Remove permissions",
+        description: "Remove permissions from a role",
+      },
+      {
+        key: "ROLE_ASSIGN_PERMISSION",
+        label: "Manage role access",
+        description: "Assign roles and permissions to users",
+      },
+      {
+        key: "UPDATE_PERMISSION",
+        label: "Update permissions",
+        description: "Update role or permission configuration",
+      },
+    ],
+  },
+  {
+    key: "ledgers",
+    label: "General ledger",
+    description: "Access to ledger accounts and the chart of accounts.",
+    permissions: [
+      {
+        key: "LEDGER_CREATE",
+        label: "Create ledgers",
+        description: "Create a ledger",
+      },
+      {
+        key: "LEDGER_READ",
+        label: "View ledgers",
+        description: "View ledgers",
+      },
+      {
+        key: "LEDGER_UPDATE",
+        label: "Update ledgers",
+        description: "Update a ledger",
+      },
+    ],
+  },
+  {
+    key: "audit",
+    label: "Audit",
+    description: "Audit trail visibility and exports.",
+    permissions: [
+      {
+        key: "AUDIT_VIEW",
+        label: "View audit logs",
+        description: "View audit logs",
+      },
+      {
+        key: "AUDIT_EXPORT",
+        label: "Export audit logs",
+        description: "Export audit logs",
       },
     ],
   },
 ];
 
-/** Every permission key, flattened — handy for "select all" behaviour. */
+/** Every permission name, flattened — handy for "select all" behaviour. */
 export const allPermissionKeys = permissionGroups.flatMap((group) =>
   group.permissions.map((permission) => permission.key),
 );
 
-/** Sensible starting permissions when a role is picked on the create form. */
-export const rolePermissionPresets: Record<UserRole, string[]> = {
+/**
+ * The roles the backend seeds (see `PermissionInitializer`), offered as
+ * suggestions for the role pickers. The live role list comes from
+ * `GET /api/roles`; this is the offline fallback while it loads.
+ */
+export const knownRoles = ["ADMIN", "CONTROL", "AUTHORIZER", "CREATOR"] as const;
+
+/**
+ * Starting permissions for each known role, mirroring the backend's seeded
+ * role → permission mapping exactly (ADMIN receives everything).
+ */
+export const rolePermissionPresets: Record<string, string[]> = {
   ADMIN: allPermissionKeys,
-  MAKER: ["gl.view", "gl.create", "txn.view", "txn.post", "reports.view"],
-  CHECKER: [
-    "gl.view",
-    "txn.view",
-    "txn.approve",
-    "txn.reverse",
-    "reports.view",
+  CONTROL: [
+    "USER_CREATE",
+    "USER_UPDATE",
+    "USER_DEACTIVATE",
+    "USER_SUSPEND",
+    "USER_LOCK",
+    "USER_UNSUSPEND",
+    "ROLE_ASSIGN_PERMISSION",
+    "UPDATE_PERMISSION",
+    "ASSIGN_ROLE",
+    "ASSIGN_PERMISSION",
+    "REMOVE_PERMISSION",
   ],
-  AUDITOR: ["gl.view", "txn.view", "reports.view", "reports.export", "audit.view"],
-  VIEWER: ["gl.view", "txn.view", "reports.view"],
+  AUTHORIZER: ["USER_ACTIVATE"],
+  CREATOR: ["LEDGER_CREATE", "LEDGER_READ", "LEDGER_UPDATE"],
 };

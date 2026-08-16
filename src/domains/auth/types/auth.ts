@@ -14,8 +14,7 @@ export const AccountStatus = {
   PENDING: "PENDING",
 } as const;
 
-export type AccountStatus =
-  (typeof AccountStatus)[keyof typeof AccountStatus];
+export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus];
 
 /** POST /api/auth/login */
 export interface LoginRequest {
@@ -29,6 +28,8 @@ export interface LoginResponse {
   refreshToken: string;
   username: string;
   role: string;
+  /** True while the account still owes a mandatory first-login password change. */
+  passwordChangeRequired: boolean;
 }
 
 /** GET /api/auth/profile → 200 */
@@ -38,6 +39,7 @@ export interface ProfileResponse {
   email: string;
   status: AccountStatus;
   roles: string[];
+  mustChangePassword: boolean;
 }
 
 /** POST /api/auth/change-password */

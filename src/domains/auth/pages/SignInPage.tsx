@@ -17,10 +17,14 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const reason = searchParams.get("reason");
+
   const notice =
-    searchParams.get("reason") === "session-expired"
+    reason === "session-expired"
       ? "Your session has expired. Sign in again to continue."
-      : null;
+      : reason === "password-changed"
+        ? "Password updated. Sign in with your new password."
+        : null;
 
   const handleLogin = async (values: LoginFormValues) => {
     setLoading(true);
@@ -32,9 +36,15 @@ export default function SignInPage() {
         values.rememberDevice,
       );
 
-      toast.success(`Welcome back, ${user.username}`);
+      if (user.mustChangePassword) {
+        navigate("/force-password-change", { replace: true });
+        return;
+      }
 
       navigate("/dashboard", { replace: true });
+
+
+      toast.success(`Welcome back, ${user.username}`);
     } catch (caught) {
       setError(getApiErrorMessage(caught, "Sign in failed. Try again."));
     } finally {

@@ -18,6 +18,11 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Generous but bounded: the hosted backend cold-starts from sleep and can
+  // take 60-90s to answer the first request. Without a timeout a dead
+  // backend hangs the UI forever; with this, it surfaces as a network error
+  // that useApiQuery retries with backoff.
+  timeout: 120_000,
 });
 
 /** Requests that are expected to 401 on bad input rather than a dead session. */

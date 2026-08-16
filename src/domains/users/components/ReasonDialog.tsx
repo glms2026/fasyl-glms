@@ -9,34 +9,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/common/FormField";
 import { InlineAlert } from "@/components/common/InlineAlert";
 
-import { suspendUserSchema, type SuspendUserFormValues } from "../schema";
-import type { ManagedUser } from "../types";
+import {
+  actionReasonSchema,
+  type ActionReasonFormValues,
+} from "../schema";
 
-interface SuspendUserDialogProps {
-  user: ManagedUser | null;
+interface ReasonDialogProps {
   open: boolean;
+  title: string;
+  description?: string;
+  confirmLabel: string;
+  /** "default" for lock/deactivate, "destructive" for suspension. */
+  tone?: "default" | "destructive";
   onClose: () => void;
-  onConfirm: (reason?: string) => void;
+  onConfirm: (reason: string) => void;
   isPending?: boolean;
   error?: string | null;
+  hint?: string;
 }
 
-/** Indefinite block — an administrator has to reactivate the account. */
-export function SuspendUserDialog({
-  user,
+/**
+ * Collects the mandatory justification for approval-gated actions (lock,
+ * suspend, deactivate). The reason travels with the approval request so the
+ * authorizer can see why the change was made.
+ */
+export function ReasonDialog({
   open,
+  title,
+  description,
+  confirmLabel,
+  tone = "default",
   onClose,
   onConfirm,
   isPending = false,
   error,
-}: SuspendUserDialogProps) {
+  hint = "Required. Shown to the authorizer on the approval request.",
+}: ReasonDialogProps) {
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<SuspendUserFormValues>({
-    resolver: zodResolver(suspendUserSchema),
+  } = useForm<ActionReasonFormValues>({
+    resolver: zodResolver(actionReasonSchema),
     defaultValues: { reason: "" },
   });
 
@@ -52,21 +67,21 @@ export function SuspendUserDialog({
       onClose={onClose}
       busy={isPending}
       size="sm"
-      title="Suspend account"
-      description={
-        user
-          ? `${user.fullName} will lose access until an administrator reactivates the account.`
-          : undefined
-      }
+      title={title}
+      description={description}
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
 
-          <Button variant="destructive" onClick={submit} disabled={isPending}>
+          <Button
+            variant={tone === "destructive" ? "destructive" : "default"}
+            onClick={submit}
+            disabled={isPending}
+          >
             {isPending && <Spinner />}
-            Suspend account
+            {confirmLabel}
           </Button>
         </>
       }
@@ -76,7 +91,8 @@ export function SuspendUserDialog({
 
         <FormField
           label="Reason"
-          hint="Optional. Shown in the audit trail."
+          required
+          hint={hint}
           error={errors.reason?.message}
         >
           {(field) => (
@@ -85,7 +101,7 @@ export function SuspendUserDialog({
               {...register("reason")}
               data-autofocus
               rows={3}
-              placeholder="e.g. Pending internal review"
+              placeholder="e.g. Account under investigation by compliance"
             />
           )}
         </FormField>

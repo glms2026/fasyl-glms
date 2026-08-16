@@ -1,15 +1,11 @@
 import { z } from "zod";
 
-import { UserRole, UserStatus } from "./types";
-
-const roleValues = Object.values(UserRole) as [string, ...string[]];
-const statusValues = Object.values(UserStatus) as [string, ...string[]];
-
-const fullName = z
-  .string()
-  .trim()
-  .min(2, "Enter the user's full name")
-  .max(80, "Keep the name under 80 characters");
+const name = (label: string, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(2, `Enter the user's ${label}`)
+    .max(max, `Keep the ${label} under ${max} characters`);
 
 const username = z
   .string()
@@ -27,8 +23,24 @@ const email = z
   .min(1, "Enter an email address")
   .email("Enter a valid email address");
 
+const reason = z
+  .string()
+  .trim()
+  .min(5, "Explain the reason (at least 5 characters)")
+  .max(1000, "Keep the reason under 1,000 characters");
+
+const roles = z
+  .array(z.string().trim().min(1, "Role names can't be empty"))
+  .min(1, "Assign at least one role")
+  .max(10, "Too many roles");
+
+const permissions = z
+  .array(z.string())
+  .min(1, "Grant at least one permission");
+
 export const createUserSchema = z.object({
-  fullName,
+  firstName: name("first name", 100),
+  lastName: name("last name", 100),
   username,
   email,
   password: z
@@ -38,45 +50,50 @@ export const createUserSchema = z.object({
     .regex(/[a-z]/, "Add a lowercase letter")
     .regex(/\d/, "Add a number")
     .regex(/[^A-Za-z0-9]/, "Add a special character"),
-  role: z.enum(roleValues, { message: "Choose a role" }),
-  permissions: z.array(z.string()).min(1, "Grant at least one permission"),
+  roles,
+  permissions,
+  reason,
 });
+
+const editableStatuses = [
+  "ACTIVE",
+  "INACTIVE",
+  "LOCKED",
+  "SUSPENDED",
+  "PASSWORD_EXPIRED",
+] as const;
 
 export const editUserSchema = z.object({
-  fullName,
+  firstName: name("first name", 100),
+  lastName: name("last name", 100),
   username,
   email,
-  role: z.enum(roleValues, { message: "Choose a role" }),
-  status: z.enum(statusValues, { message: "Choose a status" }),
-  permissions: z.array(z.string()).min(1, "Grant at least one permission"),
+  status: z.enum(editableStatuses, { message: "Choose a status" }),
 });
 
-export const lockUserSchema = z.object({
-  duration: z
-    .number({ message: "Enter how long to lock the account" })
-    .int("Use a whole number")
-    .min(1, "Lock for at least 1 minute")
-    .max(10080, "Locks can't exceed 7 days (10,080 minutes)"),
-  unit: z.enum(["minutes", "hours", "days"]),
+export const assignRolesSchema = z.object({
+  roles,
+  reason,
 });
 
-export const suspendUserSchema = z.object({
+export const actionReasonSchema = z.object({
   reason: z
     .string()
     .trim()
-    .max(240, "Keep the reason under 240 characters")
+    .min(3, "Add a short reason (at least 3 characters)")
+    .max(1000, "Keep the reason under 1,000 characters"),
+});
+
+export const approvalDecisionSchema = z.object({
+  remark: z
+    .string()
+    .trim()
+    .max(1000, "Keep the remark under 1,000 characters")
     .optional(),
 });
 
 export type CreateUserFormValues = z.infer<typeof createUserSchema>;
 export type EditUserFormValues = z.infer<typeof editUserSchema>;
-export type LockUserFormValues = z.infer<typeof lockUserSchema>;
-export type SuspendUserFormValues = z.infer<typeof suspendUserSchema>;
-
-/** Converts the lock dialog's duration + unit into minutes for the API. */
-export function toMinutes({ duration, unit }: LockUserFormValues): number {
-  if (unit === "hours") return duration * 60;
-  if (unit === "days") return duration * 60 * 24;
-
-  return duration;
-}
+export type AssignRolesFormValues = z.infer<typeof assignRolesSchema>;
+export type ActionReasonFormValues = z.infer<typeof actionReasonSchema>;
+export type ApprovalDecisionFormValues = z.infer<typeof approvalDecisionSchema>;

@@ -5,14 +5,12 @@ import { Select } from "@/components/ui/select";
 import { FormField } from "@/components/common/FormField";
 import { titleCase } from "@/lib/format";
 
-import { UserRole, UserStatus } from "../types";
-
 /** Shape shared by the create and edit forms. */
 interface UserFieldValues {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   username: string;
   email: string;
-  role: string;
   status?: string;
 }
 
@@ -21,14 +19,20 @@ interface UserFormFieldsProps<TValues extends UserFieldValues> {
   errors: FieldErrors<TValues>;
   /** Edit adds a status control; create doesn't. */
   showStatus?: boolean;
-  onRoleChange?: (role: string) => void;
 }
+
+const editableStatuses = [
+  "ACTIVE",
+  "INACTIVE",
+  "LOCKED",
+  "SUSPENDED",
+  "PASSWORD_EXPIRED",
+] as const;
 
 export function UserFormFields<TValues extends UserFieldValues>({
   register,
   errors,
   showStatus = false,
-  onRoleChange,
 }: UserFormFieldsProps<TValues>) {
   // The generic register is cast at each call because TValues is only
   // structurally constrained.
@@ -37,17 +41,32 @@ export function UserFormFields<TValues extends UserFieldValues>({
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       <FormField
-        label="Full name"
+        label="First name"
         required
-        error={errors.fullName?.message as string | undefined}
-        className="sm:col-span-2"
+        error={errors.firstName?.message as string | undefined}
       >
         {(props) => (
           <Input
             {...props}
-            {...field("fullName")}
-            autoComplete="name"
-            placeholder="e.g. Adaeze Okonkwo"
+            {...field("firstName")}
+            autoComplete="given-name"
+            placeholder="e.g. Adaeze"
+            className="h-10 border-neutral-300"
+          />
+        )}
+      </FormField>
+
+      <FormField
+        label="Last name"
+        required
+        error={errors.lastName?.message as string | undefined}
+      >
+        {(props) => (
+          <Input
+            {...props}
+            {...field("lastName")}
+            autoComplete="family-name"
+            placeholder="e.g. Okonkwo"
             className="h-10 border-neutral-300"
           />
         )}
@@ -87,43 +106,16 @@ export function UserFormFields<TValues extends UserFieldValues>({
         )}
       </FormField>
 
-      <FormField
-        label="Role"
-        required
-        hint="Sets the starting permissions below."
-        error={errors.role?.message as string | undefined}
-      >
-        {(props) => {
-          const registration = field("role");
-
-          return (
-            <Select
-              {...props}
-              {...registration}
-              onChange={(event) => {
-                void registration.onChange(event);
-                onRoleChange?.(event.target.value);
-              }}
-            >
-              {Object.values(UserRole).map((value) => (
-                <option key={value} value={value}>
-                  {titleCase(value)}
-                </option>
-              ))}
-            </Select>
-          );
-        }}
-      </FormField>
-
       {showStatus && (
         <FormField
           label="Status"
           required
           error={errors.status?.message as string | undefined}
+          className="sm:col-span-2"
         >
           {(props) => (
-            <Select {...props} {...field("status")}>
-              {Object.values(UserStatus).map((value) => (
+            <Select {...props} {...field("status")} className="sm:max-w-xs">
+              {editableStatuses.map((value) => (
                 <option key={value} value={value}>
                   {titleCase(value)}
                 </option>

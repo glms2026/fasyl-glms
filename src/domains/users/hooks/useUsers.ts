@@ -5,26 +5,48 @@ import { useApiQuery } from "@/hooks/useApiQuery";
 
 import { userService } from "../services/userService";
 import type {
+  AssignRoleRequest,
   CreateUserRequest,
-  LockUserRequest,
   ManagedUser,
-  SuspendUserRequest,
+  Page,
+  PageRequest,
   UpdateUserRequest,
+  UserActionRequest,
 } from "../types";
 
 /** Query keys — prefix-matched, so invalidating "users" refreshes them all. */
 export const userQueryKeys = {
   all: "users",
   list: "users:list",
-  metrics: "users:metrics",
-  analytics: "users:analytics",
+  /** The full unfiltered list used by the overview screen. */
+  allUsers: "users:all",
   detail: (id: number | string) => `users:detail:${id}`,
 } as const;
 
-export function useUsersQuery() {
-  return useApiQuery<ManagedUser[]>(userQueryKeys.list, () =>
-    userService.list(),
-  );
+interface ListParams extends PageRequest {
+  page: number;
+  size: number;
+}
+
+/** Server-paginated directory. Key embeds the params so changes refetch. */
+export function useUsersQuery(params: ListParams) {
+  const key = [
+    userQueryKeys.list,
+    params.page,
+    params.size,
+    params.sort ?? "createdAt,desc",
+  ].join(":");
+
+  return useApiQuery<Page<ManagedUser>>(key, () => userService.list(params));
+}
+
+/** Every user on one request — used where whole-population maths is needed. */
+export function useAllUsersQuery() {
+  return useApiQuery<ManagedUser[]>(userQueryKeys.allUsers, async () => {
+    const page = await userService.list({ page: 0, size: 1000 });
+
+    return page.content;
+  });
 }
 
 export function useUserQuery(id: number | undefined) {
@@ -37,61 +59,79 @@ export function useUserQuery(id: number | undefined) {
   );
 }
 
-export function useUserMetricsQuery() {
-  return useApiQuery(userQueryKeys.metrics, () => userService.getMetrics());
-}
-
-export function useUserAnalyticsQuery() {
-  return useApiQuery(userQueryKeys.analytics, () => userService.getAnalytics());
-}
-
-interface MutationCallbacks {
-  onSuccess?: (user: ManagedUser) => void;
+interface MutationCallbacks<TData> {
+  onSuccess?: (data: TData) => void;
   onError?: (message: string) => void;
 }
 
-export function useCreateUser({ onSuccess, onError }: MutationCallbacks = {}) {
+export function useCreateUser({ onSuccess, onError }: MutationCallbacks<ManagedUser> = {}) {
   return useApiMutation<CreateUserRequest, ManagedUser>(
     (payload) => userService.create(payload),
     { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }
 
-export function useUpdateUser({ onSuccess, onError }: MutationCallbacks = {}) {
-  return useApiMutation<UpdateUserRequest, ManagedUser>(
-    (payload) => userService.update(payload),
+export function useUpdateUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; payload: UpdateUserRequest }, unknown>(
+    ({ id, payload }) => userService.update(id, payload),
     { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }
 
-export function useLockUser({ onSuccess, onError }: MutationCallbacks = {}) {
-  return useApiMutation<LockUserRequest, ManagedUser>(
-    (payload) => userService.lock(payload),
+export function useAssignRoles({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; payload: AssignRoleRequest }, unknown>(
+    ({ id, payload }) => userService.assignRoles(id, payload),
     { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }
 
-export function useSuspendUser({ onSuccess, onError }: MutationCallbacks = {}) {
-  return useApiMutation<SuspendUserRequest, ManagedUser>(
-    (payload) => userService.suspend(payload),
+export function useLockUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; reason: string }, unknown>(
+    ({ id, reason }) => userService.lock(id, { reason } satisfies UserActionRequest),
     { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }
 
-export function useActivateUser({ onSuccess, onError }: MutationCallbacks = {}) {
-  return useApiMutation<number, ManagedUser>((id) => userService.activate(id), {
-    invalidates: [userQueryKeys.all],
-    onSuccess,
-    onError,
-  });
-}
-
-export function useResetUserPassword(options: {
-  onSuccess?: (message: string) => void;
-  onError?: (message: string) => void;
-} = {}) {
+export function useUnlockUser({ onSuccess, onError }: MutationCallbacks<string> = {}) {
   return useApiMutation<number, string>(
-    (id) => userService.resetPassword(id),
-    options,
+    (id) => userService.unlock(id),
+    { invalidates: [userQueryKeys.all], onSuccess, onError },
+  );
+}
+
+export function useSuspendUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; reason: string }, unknown>(
+    ({ id, reason }) => userService.suspend(id, { reason } satisfies UserActionRequest),
+    { invalidates: [userQueryKeys.all], onSuccess, onError },
+  );
+}
+
+export function useUnsuspendUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; reason: string }, unknown>(
+    ({ id, reason }) =>
+      userService.unsuspend(id, { reason } satisfies UserActionRequest),
+    { invalidates: [userQueryKeys.all], onSuccess, onError },
+  );
+}
+
+/** DELETE /api/users/{id} — ADMIN-only, soft delete, immediate. */
+export function useDeleteUser({ onSuccess, onError }: MutationCallbacks<void> = {}) {
+  return useApiMutation<number, void>(
+    (id) => userService.deleteUser(id),
+    { invalidates: [userQueryKeys.all], onSuccess, onError },
+  );
+}
+
+export function useActivateUser({ onSuccess, onError }: MutationCallbacks<string> = {}) {
+  return useApiMutation<number, string>(
+    (id) => userService.activate(id),
+    { invalidates: [userQueryKeys.all], onSuccess, onError },
+  );
+}
+
+export function useDeactivateUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; reason: string }, unknown>(
+    ({ id, reason }) => userService.deactivate(id, { reason } satisfies UserActionRequest),
+    { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }

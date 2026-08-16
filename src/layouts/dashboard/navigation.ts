@@ -1,4 +1,10 @@
-import { LayoutDashboard, Plus, UserCog } from "lucide-react";
+import {
+  ClipboardCheck,
+  LayoutDashboard,
+  Plus,
+  ShieldCheck,
+  UserCog,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface NavigationItem {
@@ -30,5 +36,15 @@ export const primaryNavigation: NavigationItem[] = [
     href: "/users",
     icon: UserCog,
     matchNested: true,
+  },
+  {
+    title: "Approvals",
+    href: "/approvals",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Roles & Permissions",
+    href: "/roles-permissions",
+    icon: ShieldCheck,
   },
 ];

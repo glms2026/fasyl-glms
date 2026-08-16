@@ -5,8 +5,10 @@ import { Toaster } from "sonner";
 import { AppShell } from "@/layouts/dashboard/AppShell";
 import { useAuthStore } from "@/domains/auth/stores/authStore";
 
+import MustChangePassword from "./routes/MustChangePassword";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
+import RequireMaker from "./routes/RequireMaker";
 import { RouteLoader } from "./routes/RouteLoader";
 
 // Auth screens load eagerly: one of them is almost always the first paint.
@@ -29,6 +31,12 @@ const CreateUserPage = lazy(
 const EditUserPage = lazy(() => import("@/domains/users/pages/EditUserPage"));
 const UserDetailPage = lazy(
   () => import("@/domains/users/pages/UserDetailPage"),
+);
+const ApprovalsPage = lazy(
+  () => import("@/domains/users/pages/ApprovalsPage"),
+);
+const RolesPermissionsPage = lazy(
+  () => import("@/domains/users/pages/RolesPermissionsPage"),
 );
 const ChangePasswordPage = lazy(
   () => import("@/domains/auth/pages/ChangePasswordPage"),
@@ -56,18 +64,41 @@ export default function App() {
 
           {/* Authenticated */}
           <Route element={<ProtectedRoute />}>
-            <Route element={<AppShell />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/create-gl" element={<CreateGlPage />} />
+            {/* Full-screen mandatory password change — outside the shell so
+                there is no navigation to escape to until the flag clears. */}
+            <Route
+              path="/force-password-change"
+              element={<ChangePasswordPage forced />}
+            />
 
-              <Route path="/users" element={<UsersOverviewPage />} />
-              <Route path="/users/list" element={<UsersListPage />} />
-              <Route path="/users/new" element={<CreateUserPage />} />
-              <Route path="/users/:id" element={<UserDetailPage />} />
-              <Route path="/users/:id/edit" element={<EditUserPage />} />
+            <Route element={<MustChangePassword />}>
+              <Route element={<AppShell />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/create-gl" element={<CreateGlPage />} />
 
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/change-password" element={<ChangePasswordPage />} />
+                <Route path="/users" element={<UsersOverviewPage />} />
+                <Route path="/users/list" element={<UsersListPage />} />
+
+                {/* Create/edit are maker operations (CONTROL/ADMIN). */}
+                <Route element={<RequireMaker />}>
+                  <Route path="/users/new" element={<CreateUserPage />} />
+                  <Route path="/users/:id/edit" element={<EditUserPage />} />
+                </Route>
+
+                <Route path="/users/:id" element={<UserDetailPage />} />
+
+                <Route path="/approvals" element={<ApprovalsPage />} />
+                <Route
+                  path="/roles-permissions"
+                  element={<RolesPermissionsPage />}
+                />
+
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route
+                  path="/change-password"
+                  element={<ChangePasswordPage />}
+                />
+              </Route>
             </Route>
           </Route>
 

@@ -1,8 +1,6 @@
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
   Legend,
@@ -18,14 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { titleCase } from "@/lib/format";
 
-import type {
-  DistributionSlice,
-  LoginTrendPoint,
-  UserGrowthPoint,
-} from "../types";
+import type { DistributionSlice, UserGrowthPoint } from "../types";
 
 const NAVY = "#001A42";
-const SKY = "#38BDF8";
 
 const SLICE_COLORS = [
   "#001A42",
@@ -107,37 +100,6 @@ export function UserGrowthChart({
             fill="url(#userGrowthFill)"
           />
         </AreaChart>
-      </ResponsiveContainer>
-    </ChartFrame>
-  );
-}
-
-export function LoginTrendChart({
-  data,
-  isLoading = false,
-}: {
-  data: LoginTrendPoint[] | undefined;
-  isLoading?: boolean;
-}) {
-  return (
-    <ChartFrame
-      isLoading={isLoading}
-      hasData={Boolean(data?.length)}
-      emptyLabel="No sign-in activity recorded"
-    >
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
-
-          <XAxis dataKey="day" {...axisProps} />
-          <YAxis allowDecimals={false} {...axisProps} />
-
-          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#FAFAFA" }} />
-          <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-
-          <Bar dataKey="logins" name="Successful" fill={NAVY} radius={[6, 6, 0, 0]} />
-          <Bar dataKey="failed" name="Failed" fill={SKY} radius={[6, 6, 0, 0]} />
-        </BarChart>
       </ResponsiveContainer>
     </ChartFrame>
   );

@@ -1,3 +1,4 @@
+import { AxiosError } from "axios";
 import { create } from "zustand";
 
 import { setUnauthorizedHandler } from "@/lib/apiClient";
@@ -23,11 +24,33 @@ interface AuthState {
   clearAuth: () => void;
 }
 
-function toAuthUser(profile: ProfileResponse, fallbackRole?: string): AuthUser {
+function toAuthUser(
+  profile: ProfileResponse,
+  fallbackRole?: string,
+  mustChangePassword = false,
+): AuthUser {
   return {
     ...profile,
+    mustChangePassword,
     primaryRole: profile.roles?.[0] ?? fallbackRole ?? "USER",
   };
+}
+
+/**
+ * The PasswordChangeFilter answers 403 "Password change required" for
+ * everything except change-password / logout / refresh-token while the
+ * account owes a first-login change. The profile endpoint is blocked too,
+ * so a 403 there with a stored session means the flag is still set.
+ */
+function isPasswordChangeRequired(error: unknown): boolean {
+  if (!(error instanceof AxiosError)) return false;
+  if (error.response?.status !== 403) return false;
+
+  const data = error.response.data;
+  const message =
+    typeof data === "string" ? data : (data as { message?: string } | null)?.message;
+
+  return typeof message === "string" && /password change required/i.test(message);
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -53,7 +76,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         initializing: false,
       });
-    } catch {
+    } catch (caught) {
+      // Still owes the mandatory change: keep the session and let the
+      // route guard send the user straight to the change screen.
+      if (isPasswordChangeRequired(caught)) {
+        set({
+          user: {
+            id: 0,
+            username: tokenStorage.getUsername() ?? "",
+            email: "",
+            status: "ACTIVE",
+            roles: [],
+            mustChangePassword: true,
+            primaryRole: "USER",
+          },
+          isAuthenticated: true,
+          initializing: false,
+        });
+        return;
+      }
+
       tokenStorage.clear();
 
       set({ user: null, isAuthenticated: false, initializing: false });
@@ -67,14 +109,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       remember,
+      username: result.username,
     });
 
-    // Login returns only username and role, so the full profile is fetched
-    // straight away. A failure here shouldn't undo a valid sign-in.
+    // The profile endpoint is itself blocked by the PasswordChangeFilter
+    // while the flag is set, so the flag comes from the login response and
+    // survives even when the profile fetch 403s.
+    const mustChangePassword = result.passwordChangeRequired === true;
+
     let user: AuthUser;
 
     try {
-      user = toAuthUser(await authService.getProfile(), result.role);
+      user = toAuthUser(
+        await authService.getProfile(),
+        result.role,
+        mustChangePassword,
+      );
     } catch {
       user = {
         id: 0,
@@ -82,6 +132,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email: "",
         status: "ACTIVE",
         roles: result.role ? [result.role] : [],
+        mustChangePassword,
         primaryRole: result.role ?? "USER",
       };
     }
@@ -110,7 +161,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const profile = await authService.getProfile();
 
     set((state) => ({
-      user: toAuthUser(profile, state.user?.primaryRole),
+      user: toAuthUser(
+        profile,
+        state.user?.primaryRole,
+        state.user?.mustChangePassword ?? false,
+      ),
       isAuthenticated: true,
     }));
   },

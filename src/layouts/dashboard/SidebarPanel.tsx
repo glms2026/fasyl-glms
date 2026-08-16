@@ -13,6 +13,8 @@ interface SidebarPanelProps {
   onSignOut: () => void;
   /** Closes the drawer after tapping an item on mobile. */
   onNavigate?: () => void;
+  /** Pending-approvals count, shown as a badge on the Approvals item. */
+  pendingApprovals?: number;
 }
 
 /**
@@ -23,6 +25,7 @@ export function SidebarPanel({
   collapsed,
   onSignOut,
   onNavigate,
+  pendingApprovals = 0,
 }: SidebarPanelProps) {
   const actionClass = cn(
     "flex h-11 items-center rounded-xl text-sm font-medium text-white/80 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/60",
@@ -85,6 +88,7 @@ export function SidebarPanel({
             item={item}
             collapsed={collapsed}
             onNavigate={onNavigate}
+            badge={item.href === "/approvals" ? pendingApprovals : undefined}
           />
         ))}
       </nav>

@@ -5,6 +5,8 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useAuth } from "@/domains/auth/hooks/useAuth";
+import { useAccess } from "@/domains/users/hooks/useAccess";
+import { usePendingApprovalsCount } from "@/domains/users/hooks/useApprovals";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/layouts/store/useSidebarStore";
 
@@ -23,6 +25,9 @@ export function AppShell() {
   const collapsed = useSidebarStore((state) => state.collapsed);
   const mobileOpen = useSidebarStore((state) => state.mobileOpen);
   const closeMobile = useSidebarStore((state) => state.closeMobile);
+
+  const access = useAccess();
+  const pendingApprovals = usePendingApprovalsCount(access.canReview).count;
 
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -58,7 +63,8 @@ export function AppShell() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50">
+    <div className="flex h-screen overflow-hidden bg-neutral">
+      {/* Desktop Sidebar */}
       <aside
         className={cn(
           "hidden shrink-0 transition-[width] duration-300 ease-in-out lg:block",
@@ -68,9 +74,11 @@ export function AppShell() {
         <SidebarPanel
           collapsed={collapsed}
           onSignOut={() => setSignOutOpen(true)}
+          pendingApprovals={pendingApprovals}
         />
       </aside>
 
+      {/* Mobile Sidebar */}
       {mobileOpen && (
         <div className="lg:hidden">
           <div
@@ -101,15 +109,17 @@ export function AppShell() {
                 setSignOutOpen(true);
               }}
               onNavigate={closeMobile}
+              pendingApprovals={pendingApprovals}
             />
           </div>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Main */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopBar onSignOut={() => setSignOutOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto scrollbar-hide">
           <div className="mx-auto min-h-full w-full max-w-[100rem] p-4 sm:p-6 lg:p-8">
             <Outlet />
           </div>

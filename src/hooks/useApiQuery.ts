@@ -1,7 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AxiosError } from "axios";
 
 import { getApiErrorMessage } from "@/lib/errors";
 import { subscribeToQueryKey } from "@/lib/queryCache";
+
+/**
+ * Backoff schedule for transient network failures. The hosted backend sleeps
+ * when idle and takes 60-90s to cold-start, so a request can fail or hang
+ * once before the instance is warm. Only network-level failures retry;
+ * HTTP 4xx/5xx responses are surfaced immediately.
+ */
+const RETRY_DELAYS = [2_000, 5_000, 10_000];
+
+function isTransientNetworkError(caught: unknown): boolean {
+  if (!(caught instanceof AxiosError)) return false;
+
+  return (
+    caught.code === "ERR_NETWORK" ||
+    caught.code === "ECONNABORTED" ||
+    caught.code === "ETIMEDOUT" ||
+    caught.response === undefined
+  );
+}
 
 export interface UseApiQueryOptions<T> {
   /** Skip the request until this becomes true (e.g. waiting on a route param). */
@@ -68,27 +88,44 @@ export function useApiQuery<T>(
     setIsFetching(true);
     setError(null);
 
-    try {
-      const result = await fetcherRef.current();
-
+    const attempt = async (retryIndex: number): Promise<void> => {
       // Ignore responses a newer request has already superseded.
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
 
-      setDataState(result);
-      onSuccessRef.current?.(result);
-    } catch (caught) {
-      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      try {
+        const result = await fetcherRef.current();
 
-      const message = getApiErrorMessage(caught);
+        if (!mountedRef.current || requestId !== requestIdRef.current) return;
 
-      setError(message);
-      onErrorRef.current?.(message);
-    } finally {
-      if (mountedRef.current && requestId === requestIdRef.current) {
-        setIsFetching(false);
+        setDataState(result);
+        onSuccessRef.current?.(result);
         setHasLoaded(true);
+        setIsFetching(false);
+      } catch (caught) {
+        if (!mountedRef.current || requestId !== requestIdRef.current) return;
+
+        const delay = RETRY_DELAYS[retryIndex];
+
+        // Transient network failure (backend cold-starting, connection
+        // dropped): retry with backoff, keeping the fetching flag set so
+        // the UI doesn't flash an error state between attempts.
+        if (isTransientNetworkError(caught) && delay !== undefined) {
+          window.setTimeout(() => {
+            void attempt(retryIndex + 1);
+          }, delay);
+          return;
+        }
+
+        const message = getApiErrorMessage(caught);
+
+        setError(message);
+        onErrorRef.current?.(message);
+        setHasLoaded(true);
+        setIsFetching(false);
       }
-    }
+    };
+
+    await attempt(0);
   }, []);
 
   useEffect(() => {

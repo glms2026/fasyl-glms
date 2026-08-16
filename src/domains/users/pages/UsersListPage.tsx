@@ -3,60 +3,147 @@ import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { DataTable, type DataTableColumn } from "@/components/common/DataTable";
 import { EmptyState } from "@/components/common/EmptyState";
-import { PageHeader } from "@/components/common/PageHeader";
 import { TablePagination } from "@/components/common/TablePagination";
-import { useDataTable } from "@/hooks/useDataTable";
-import { formatDate, formatRelative, titleCase } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { formatDate, titleCase } from "@/lib/format";
 
+import { ModuleHeader } from "../components/ModuleHeader";
+import { heroButtonClass } from "../components/heroStyles";
 import { UserAvatar } from "../components/UserAvatar";
 import { UserFilters } from "../components/UserFilters";
 import { UserRowActions } from "../components/UserRowActions";
 import { UserStatusBadge } from "../components/UserStatusBadge";
 import { UsersTabs } from "../components/UsersTabs";
+import { useAccess } from "../hooks/useAccess";
 import { useUserActions } from "../hooks/useUserActions";
 import { useUsersQuery } from "../hooks/useUsers";
-import type { ManagedUser } from "../types";
+import { useRolesCatalogue } from "../hooks/useRoles";
+import { userFullName, type ManagedUser } from "../types";
+
+type SortDirection = "asc" | "desc";
+
+function RoleBadges({ roles }: { roles: string[] }) {
+  const shown = roles.slice(0, 2);
+  const extra = roles.length - shown.length;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {shown.map((role) => (
+        <Badge key={role} variant="outline">
+          {titleCase(role)}
+        </Badge>
+      ))}
+
+      {extra > 0 && (
+        <Badge variant="neutral">+{extra}</Badge>
+      )}
+    </div>
+  );
+}
 
 export default function UsersListPage() {
   const navigate = useNavigate();
-  const { data, isLoading, error, refetch } = useUsersQuery();
 
   const [status, setStatus] = useState("ALL");
   const [role, setRole] = useState("ALL");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sort, setSort] = useState<{
+    field: keyof ManagedUser;
+    direction: SortDirection;
+  } | null>({ field: "createdAt", direction: "desc" });
+
+  const sortParam = sort ? `${String(sort.field)},${sort.direction}` : undefined;
+
+  const { data, isLoading, error, refetch } = useUsersQuery({
+    page: page - 1,
+    size: pageSize,
+    sort: sortParam,
+  });
+
+  const debouncedSearch = useDebouncedValue(search, 250);
+
+  // Search and the status/role filters run against the loaded page — the
+  // backend only paginates, it doesn't search. Pagination itself is server
+  // driven, so the page controls are always accurate.
+  const rows = useMemo(() => {
+    const content = data?.content ?? [];
+    const term = debouncedSearch.trim().toLowerCase();
+
+    return content.filter((user) => {
+      const matchesStatus = status === "ALL" || user.status === status;
+      const matchesRole = role === "ALL" || user.roles.includes(role);
+
+      if (!matchesStatus || !matchesRole) return false;
+
+      if (!term) return true;
+
+      const haystack = [
+        user.firstName,
+        user.lastName,
+        user.username,
+        user.email,
+        ...user.roles,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  }, [data, status, role, debouncedSearch]);
+
+  const changeStatus = (value: string) => {
+    setStatus(value);
+    setPage(1);
+  };
+
+  const changeRole = (value: string) => {
+    setRole(value);
+    setPage(1);
+  };
+
+  const changeSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const toggleSort = (field: keyof ManagedUser) => {
+    setPage(1);
+
+    setSort((current) => {
+      if (!current || current.field !== field) {
+        return { field, direction: "asc" };
+      }
+
+      return {
+        field,
+        direction: current.direction === "asc" ? "desc" : "asc",
+      };
+    });
+  };
 
   const actions = useUserActions();
+  const access = useAccess();
+  const catalogue = useRolesCatalogue();
 
-  const filters = useMemo(
-    () => [
-      (user: ManagedUser) => status === "ALL" || user.status === status,
-      (user: ManagedUser) => role === "ALL" || user.role === role,
-    ],
-    [status, role],
-  );
-
-  const table = useDataTable<ManagedUser>({
-    rows: data,
-    searchFields: ["fullName", "username", "email"],
-    initialSort: { field: "createdAt", direction: "desc" },
-    filters,
-  });
+  const roleOptions =
+    catalogue.data?.map((role) => role.name) ?? undefined;
 
   const columns: Array<DataTableColumn<ManagedUser>> = [
     {
-      id: "fullName",
+      id: "name",
       header: "Full name",
-      sortField: "fullName",
+      sortField: "firstName",
       cell: (user) => (
         <div className="flex items-center gap-3">
-          <UserAvatar name={user.fullName} size="sm" />
+          <UserAvatar name={userFullName(user)} size="sm" />
 
           <div className="min-w-0">
             <p className="truncate font-medium text-neutral-900">
-              {user.fullName}
+              {userFullName(user)}
             </p>
 
             <p className="truncate text-xs text-neutral-500 md:hidden">
@@ -71,9 +158,7 @@ export default function UsersListPage() {
       header: "Username",
       sortField: "username",
       hideBelow: "lg",
-      cell: (user) => (
-        <span className="text-neutral-600">{user.username}</span>
-      ),
+      cell: (user) => <span className="text-neutral-600">{user.username}</span>,
     },
     {
       id: "email",
@@ -83,10 +168,9 @@ export default function UsersListPage() {
       cell: (user) => <span className="text-neutral-600">{user.email}</span>,
     },
     {
-      id: "role",
-      header: "Role",
-      sortField: "role",
-      cell: (user) => <Badge variant="outline">{titleCase(user.role)}</Badge>,
+      id: "roles",
+      header: "Roles",
+      cell: (user) => <RoleBadges roles={user.roles} />,
     },
     {
       id: "status",
@@ -104,17 +188,6 @@ export default function UsersListPage() {
       ),
     },
     {
-      id: "lastLoginAt",
-      header: "Last login",
-      sortField: "lastLoginAt",
-      hideBelow: "xl",
-      cell: (user) => (
-        <span className="text-neutral-600">
-          {user.lastLoginAt ? formatRelative(user.lastLoginAt) : "Never"}
-        </span>
-      ),
-    },
-    {
       id: "actions",
       header: "Actions",
       align: "right",
@@ -127,26 +200,36 @@ export default function UsersListPage() {
             user={user}
             onView={(target) => navigate(`/users/${target.id}`)}
             onEdit={(target) => navigate(`/users/${target.id}/edit`)}
+            onAssignRoles={actions.openAssignRoles}
             onLock={actions.openLock}
+            onUnlock={actions.openUnlock}
             onSuspend={actions.openSuspend}
+            onUnsuspend={actions.openUnsuspend}
+            onDeactivate={actions.openDeactivate}
             onActivate={actions.openActivate}
-            onResetPassword={actions.openResetPassword}
+            onDelete={actions.openDelete}
           />
         </div>
       ),
     },
   ];
 
+  const totalRows = data?.totalElements ?? 0;
+  const pageCount = Math.max(1, data?.totalPages ?? 1);
+  const filterActive = status !== "ALL" || role !== "ALL" || debouncedSearch !== "";
+
   return (
     <div className="space-y-6">
-      <PageHeader
+      <ModuleHeader
         title="All users"
-        description="Search, filter and manage every account in GLMS."
+        description="Search, filter and manage every account in GLMS. Sensitive changes are queued for approval."
         actions={
-          <Link to="/users/new" className={cn(buttonVariants({ size: "lg" }), "px-4")}>
-            <UserPlus className="size-4" />
-            Create user
-          </Link>
+          access.canMakeChanges && (
+            <Link to="/users/new" className={heroButtonClass}>
+              <UserPlus className="size-4" />
+              Create user
+            </Link>
+          )
         }
       />
 
@@ -155,32 +238,33 @@ export default function UsersListPage() {
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         <div className="border-b border-neutral-100 p-4 sm:p-6">
           <UserFilters
-            search={table.search}
-            onSearchChange={table.setSearch}
+            search={search}
+            onSearchChange={changeSearch}
             status={status}
-            onStatusChange={setStatus}
+            onStatusChange={changeStatus}
             role={role}
-            onRoleChange={setRole}
+            onRoleChange={changeRole}
+            roleOptions={roleOptions}
           />
         </div>
 
         <DataTable
           caption="Users"
           columns={columns}
-          rows={table.pageRows}
+          rows={rows}
           getRowId={(user) => user.id}
           isLoading={isLoading}
           error={error}
           onRetry={refetch}
-          sort={table.sort}
-          onToggleSort={table.toggleSort}
+          sort={sort}
+          onToggleSort={toggleSort}
           onRowClick={(user) => navigate(`/users/${user.id}`)}
           empty={
-            table.isFilteredEmpty ? (
+            filterActive ? (
               <EmptyState
                 icon={Users}
                 title="No users match those filters"
-                description="Try a different search term, or clear the status and role filters."
+                description="Try a different search term, or clear the status and role filters. Search applies to the page you're viewing."
               />
             ) : (
               <EmptyState
@@ -188,27 +272,29 @@ export default function UsersListPage() {
                 title="No users yet"
                 description="Create the first account to start assigning ledger access."
                 action={
-                  <Link
-                    to="/users/new"
-                    className={cn(buttonVariants({ size: "lg" }), "px-4")}
-                  >
-                    <UserPlus className="size-4" />
-                    Create user
-                  </Link>
+                  access.canMakeChanges ? (
+                    <Link to="/users/new" className={heroButtonClass}>
+                      <UserPlus className="size-4" />
+                      Create user
+                    </Link>
+                  ) : undefined
                 }
               />
             )
           }
         />
 
-        {!isLoading && !error && table.totalRows > 0 && (
+        {!isLoading && !error && totalRows > 0 && (
           <TablePagination
-            page={table.page}
-            pageCount={table.pageCount}
-            pageSize={table.pageSize}
-            totalRows={table.totalRows}
-            onPageChange={table.setPage}
-            onPageSizeChange={table.setPageSize}
+            page={page}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            totalRows={totalRows}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
           />
         )}
       </div>

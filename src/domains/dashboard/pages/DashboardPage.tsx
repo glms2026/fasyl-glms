@@ -14,11 +14,10 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
 import { useAuth } from "@/domains/auth/hooks/useAuth";
-import { UserActivityFeed } from "@/domains/users/components/UserActivityFeed";
-import {
-  useUserAnalyticsQuery,
-  useUserMetricsQuery,
-} from "@/domains/users/hooks/useUsers";
+import { useAccess } from "@/domains/users/hooks/useAccess";
+import { PendingApprovalsList } from "@/domains/users/components/PendingApprovalsList";
+import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
+import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
 import { formatNumber, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -38,9 +37,19 @@ function greeting(): string {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const access = useAccess();
 
-  const metrics = useUserMetricsQuery();
-  const analytics = useUserAnalyticsQuery();
+  const usersQuery = useAllUsersQuery();
+  const approvalsQuery = usePendingApprovalsQuery(
+    { page: 0, size: 6 },
+    access.canReview,
+  );
+
+  const users = usersQuery.data ?? [];
+  const totalUsers = users.length;
+  const activeUsers = users.filter((candidate) => candidate.status === "ACTIVE")
+    .length;
+  const pendingApprovals = approvalsQuery.data?.content ?? [];
 
   return (
     <div className="space-y-6">
@@ -54,16 +63,18 @@ export default function DashboardPage() {
         }
         actions={
           <>
-            <Link
-              to="/users/new"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "px-4",
-              )}
-            >
-              <UserPlus className="size-4" />
-              Add user
-            </Link>
+            {access.canMakeChanges && (
+              <Link
+                to="/users/new"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "px-4",
+                )}
+              >
+                <UserPlus className="size-4" />
+                Add user
+              </Link>
+            )}
 
             <Link
               to="/create-gl"
@@ -137,7 +148,7 @@ export default function DashboardPage() {
         <SectionCard
           title="Team access"
           description="Who can reach the ledger right now."
-          className="xl:col-span-1"
+          className={access.canReview ? "xl:col-span-1" : "xl:col-span-3"}
           action={
             <Link
               to="/users"
@@ -150,31 +161,41 @@ export default function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <MetricCard
               label="Total users"
-              value={metrics.data?.total ?? 0}
+              value={totalUsers}
               icon={Users}
-              isLoading={metrics.isLoading}
+              isLoading={usersQuery.isLoading}
             />
 
             <MetricCard
               label="Active users"
-              value={metrics.data?.active ?? 0}
+              value={activeUsers}
               icon={Users}
               tone="success"
-              isLoading={metrics.isLoading}
+              isLoading={usersQuery.isLoading}
             />
           </div>
         </SectionCard>
 
-        <SectionCard
-          title="Recent activity"
-          description="The latest administrative changes across accounts."
-          className="xl:col-span-2"
-        >
-          <UserActivityFeed
-            activities={analytics.data?.recentActivity}
-            isLoading={analytics.isLoading}
-          />
-        </SectionCard>
+        {access.canReview && (
+          <SectionCard
+            title="Pending approvals"
+            description="Maker-checker requests waiting for an authorizer."
+            className="xl:col-span-2"
+            action={
+              <Link
+                to="/approvals"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Review queue
+              </Link>
+            }
+          >
+            <PendingApprovalsList
+              requests={pendingApprovals}
+              isLoading={approvalsQuery.isLoading}
+            />
+          </SectionCard>
+        )}
       </div>
     </div>
   );

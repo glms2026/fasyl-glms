@@ -2,7 +2,8 @@ import { Select } from "@/components/ui/select";
 import { SearchInput } from "@/components/common/SearchInput";
 import { titleCase } from "@/lib/format";
 
-import { UserRole, UserStatus } from "../types";
+import { knownRoles } from "../data/permissions";
+import { UserStatus } from "../types";
 
 interface UserFiltersProps {
   search: string;
@@ -11,6 +12,8 @@ interface UserFiltersProps {
   onStatusChange: (value: string) => void;
   role: string;
   onRoleChange: (value: string) => void;
+  /** Live role names from GET /api/roles; falls back to the known seed set. */
+  roleOptions?: string[];
 }
 
 export function UserFilters({
@@ -20,6 +23,7 @@ export function UserFilters({
   onStatusChange,
   role,
   onRoleChange,
+  roleOptions = [...knownRoles],
 }: UserFiltersProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -55,7 +59,7 @@ export function UserFilters({
         >
           <option value="ALL">All roles</option>
 
-          {Object.values(UserRole).map((value) => (
+          {roleOptions.map((value) => (
             <option key={value} value={value}>
               {titleCase(value)}
             </option>

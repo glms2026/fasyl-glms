@@ -7,6 +7,7 @@ import type { SortState } from "@/hooks/useDataTable";
 
 import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
+import { InlineAlert } from "./InlineAlert";
 
 export interface DataTableColumn<TRow> {
   id: string;
@@ -67,7 +68,7 @@ export function DataTable<TRow>({
   skeletonRows = 6,
   caption,
 }: DataTableProps<TRow>) {
-  if (error) {
+  if (error && rows.length === 0) {
     return <ErrorState message={error} onRetry={onRetry} />;
   }
 
@@ -77,6 +78,25 @@ export function DataTable<TRow>({
 
   return (
     <div className="w-full overflow-x-auto scrollbar-thin">
+      {error && (
+        <div className="flex flex-col gap-2 border-b border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <InlineAlert variant="error">
+            Couldn't refresh this data — showing the last loaded results
+            instead.
+          </InlineAlert>
+
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="shrink-0 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      )}
+
       <table className="w-full min-w-[46rem] border-collapse text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
 
