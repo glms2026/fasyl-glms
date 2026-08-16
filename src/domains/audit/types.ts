@@ -3,7 +3,14 @@
  *
  * The backend answers list endpoints with a PagedModel envelope
  * (`content` + `page` metadata) rather than the bare Spring `Page` shape
- * used by `/users`, and the export endpoint with raw CSV.
+ * used by `/users`.
+ *
+ * NOTE: the contract also declares `/search` (username/action/from/to +
+ * pagination) and `/export` (CSV download), but both answer HTTP 500 to
+ * every request on the current backend — a server bug, not a client one.
+ * Until that is fixed the trail is fetched whole via `/audit-logs` and
+ * filtered, measured and exported client-side, so this module does not
+ * call those two endpoints.
  */
 
 /** GET /api/admin/audit-logs/{id} → 200 — one recorded action. */
@@ -15,11 +22,14 @@ export interface AuditLogEntry {
   action: string;
   /** Human-readable summary written at audit time. */
   description: string;
-  /** ISO-8601 instant, e.g. 2026-08-16T19:04:22.123Z. */
+  /**
+   * Zone-less ISO-8601 UTC wall-clock time from the backend's
+   * `LocalDateTime`, e.g. "2026-08-16T19:04:22.123".
+   */
   createdAt: string;
 }
 
-/** PagedModel envelope returned by list and search endpoints. */
+/** PagedModel envelope returned by the list endpoint. */
 export interface AuditLogPage {
   content: AuditLogEntry[];
   page: {
@@ -30,17 +40,11 @@ export interface AuditLogPage {
   };
 }
 
-/** Query params understood by the list, search and export endpoints. */
+/** Query params understood by the list endpoint. */
 export interface AuditLogParams {
   /** 0-indexed page number. */
   page?: number;
   size?: number;
   /** Spring sort: "field,dir" e.g. "createdAt,desc". */
   sort?: string;
-  username?: string;
-  action?: string;
-  /** ISO-8601 date-time, inclusive lower bound. */
-  from?: string;
-  /** ISO-8601 date-time, inclusive upper bound. */
-  to?: string;
 }

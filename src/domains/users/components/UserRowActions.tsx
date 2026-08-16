@@ -61,6 +61,11 @@ export function UserRowActions({
 
   const credentials = getCreatedCredentials(user.id);
 
+  // Temporary login credentials are a CONTROL-privilege: only users holding
+  // the CONTROL role may copy them from the table (admins and authorizers
+  // see no such action, even though they may manage the same accounts).
+  const canCopyCredentials = Boolean(credentials) && access.isControl;
+
   const copyCredentials = async () => {
     if (!credentials) return;
 
@@ -96,7 +101,7 @@ export function UserRowActions({
             View details
           </DropdownMenuItem>
 
-          {credentials && (
+          {canCopyCredentials && (
             <DropdownMenuItem
               icon={<KeyRound />}
               onClick={() => {

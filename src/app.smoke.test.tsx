@@ -1,6 +1,6 @@
 import { AxiosError, type AxiosResponse } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 // Stub the network layer: the smoke test proves the app mounts and routes,
 // not that the backend is reachable. The mock returns backend-shaped
@@ -189,7 +189,37 @@ describe("app smoke", () => {
       "Approvals",
       "Roles & Permissions",
       "Audit Logs",
+      "Settings",
     ]);
+  });
+
+  it("renders the settings page with the change-password form", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/settings");
+
+    render(<App />);
+
+    await waitFor(
+      () =>
+        expect(screen.getByRole("heading", { name: /settings/i })).toBeDefined(),
+      { timeout: 5000 },
+    );
+
+    // The signed-in account summary (mock profile) renders — the username
+    // also appears in the top bar, so allow both occurrences.
+    await waitFor(
+      () =>
+        expect(screen.getAllByText("aokonkwo").length).toBeGreaterThan(0),
+      { timeout: 5000 },
+    );
+
+    // …and the change-password form is present and interactive.
+    expect(screen.getByLabelText("Current password")).toBeDefined();
+    expect(screen.getByLabelText("New password")).toBeDefined();
+    expect(screen.getByLabelText("Confirm new password")).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: /update password/i }),
+    ).toBeDefined();
   });
 
   it("renders the audit trail for an administrator", async () => {
@@ -377,5 +407,111 @@ describe("app smoke", () => {
     expect(screen.getByRole("searchbox", { name: /search users/i })).toBeDefined();
     expect(screen.getByLabelText(/rows per page/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /next page/i })).toBeDefined();
+  });
+
+  /** Signs a session in, seeds one saved credential for user #2, and opens
+   *  that user's row menu. Returns whether the copy item rendered. (The
+   *  signed-in profile is id 1, so boot never consumes the id-2 entry.) */
+  async function rowMenuHasCopyAction(roles: string[]): Promise<boolean> {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    localStorage.setItem(
+      "glms:created-credentials:v1",
+      JSON.stringify({
+        2: {
+          username: "user2",
+          password: "Temp@1234",
+          createdAt: "2026-08-16T00:00:00.000Z",
+        },
+      }),
+    );
+    window.history.pushState({}, "", "/users/list");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles },
+          });
+        }
+
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyPage });
+        }
+
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      await waitFor(
+        () =>
+          expect(document.querySelectorAll("tbody tr").length).toBe(10),
+        { timeout: 5000 },
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Actions for First2 Last2" }),
+      );
+
+      await waitFor(
+        () => expect(screen.getByRole("menu")).toBeDefined(),
+        { timeout: 5000 },
+      );
+
+      return (
+        screen.queryByRole("menuitem", {
+          name: /copy login credentials/i,
+        }) !== null
+      );
+    } finally {
+      if (original) {
+        mockedGet.mockImplementation(original);
+      }
+    }
+  }
+
+  it("lets a CONTROL user copy a newly created user's login credentials", async () => {
+    await expect(rowMenuHasCopyAction(["CONTROL"])).resolves.toBe(true);
+  });
+
+  it("hides the copy-credentials action for non-CONTROL roles", async () => {
+    await expect(rowMenuHasCopyAction(["AUTHORIZER"])).resolves.toBe(false);
+  });
+
+  it("wipes saved credentials once the account signs in on this device", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    localStorage.setItem(
+      "glms:created-credentials:v1",
+      JSON.stringify({
+        1: {
+          username: "user1",
+          password: "Temp@1234",
+          createdAt: "2026-08-16T00:00:00.000Z",
+        },
+      }),
+    );
+
+    // Simulate the stored-session boot: initialize() fetches the profile
+    // (mock user id 1) and should consume the credentials saved for id 1.
+    useAuthStore.setState({
+      user: null,
+      isAuthenticated: false,
+      initializing: true,
+    });
+
+    await useAuthStore.getState().initialize();
+
+    expect(localStorage.getItem("glms:created-credentials:v1")).toBeNull();
   });
 });

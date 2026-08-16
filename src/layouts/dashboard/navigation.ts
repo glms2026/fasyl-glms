@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Plus,
   ScrollText,
+  Settings,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
@@ -55,5 +56,10 @@ export const primaryNavigation: NavigationItem[] = [
     href: "/audit-logs",
     icon: ScrollText,
     adminOnly: true,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
   },
 ];

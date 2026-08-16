@@ -43,6 +43,7 @@ const AuditLogsPage = lazy(() => import("@/domains/audit/pages/AuditLogsPage"));
 const ChangePasswordPage = lazy(
   () => import("@/domains/auth/pages/ChangePasswordPage"),
 );
+const SettingsPage = lazy(() => import("@/domains/auth/pages/SettingsPage"));
 const ProfilePage = lazy(() => import("@/domains/auth/pages/ProfilePage"));
 const NotFoundPage = lazy(() => import("./routes/NotFoundPage"));
 
@@ -101,6 +102,7 @@ export default function App() {
                 </Route>
 
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route
                   path="/change-password"
                   element={<ChangePasswordPage />}

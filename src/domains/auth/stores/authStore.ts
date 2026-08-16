@@ -4,6 +4,8 @@ import { create } from "zustand";
 import { setUnauthorizedHandler } from "@/lib/apiClient";
 import { tokenStorage } from "@/lib/token";
 
+import { consumeCreatedCredentials } from "@/domains/users/data/createdCredentials";
+
 import { authService } from "../services/authService";
 import type {
   AuthUser,
@@ -53,6 +55,16 @@ function isPasswordChangeRequired(error: unknown): boolean {
   return typeof message === "string" && /password change required/i.test(message);
 }
 
+/**
+ * A successful sign-in on this device means the account's temporary
+ * password — if it was created here and saved for the "Copy credentials"
+ * action — is spent: the backend forces the change on first login. Wipe
+ * the plaintext so the action disappears even for CONTROL users.
+ */
+function expireTemporaryCredentials(userId: number): void {
+  if (userId > 0) consumeCreatedCredentials(userId);
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   initializing: true,
@@ -70,6 +82,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const profile = await authService.getProfile();
+
+      expireTemporaryCredentials(profile.id);
 
       set({
         user: toAuthUser(profile),
@@ -137,6 +151,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
     }
 
+    expireTemporaryCredentials(user.id);
+
     set({ user, isAuthenticated: true, initializing: false });
 
     return user;
@@ -159,6 +175,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!tokenStorage.hasSession()) return;
 
     const profile = await authService.getProfile();
+
+    expireTemporaryCredentials(profile.id);
 
     set((state) => ({
       user: toAuthUser(

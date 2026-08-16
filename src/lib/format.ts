@@ -30,7 +30,12 @@ export function titleCase(value: string): string {
  */
 const HAS_ZONE_SUFFIX = /(?:Z|[+-]\d{2}:?\d{2})$/;
 
-function toUtcDate(value: string): Date {
+/**
+ * Parses a backend timestamp into a Date, treating zone-less strings as
+ * UTC. Exported so filters can compare entry times on the same basis the
+ * formatters display them.
+ */
+export function toUtcDate(value: string): Date {
   const normalized =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) && !HAS_ZONE_SUFFIX.test(value)
       ? `${value}Z`
