@@ -57,11 +57,6 @@ export const permissionGroups: PermissionGroup[] = [
         description: "Lock a user account",
       },
       {
-        key: "USER_UNLOCK",
-        label: "Unlock accounts",
-        description: "Unlock a locked user account",
-      },
-      {
         key: "PASSWORD_RESET",
         label: "Reset passwords",
         description: "Reset a user's password",

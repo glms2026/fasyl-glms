@@ -36,6 +36,8 @@ export interface ManagedUser {
   lockedAt: string | null;
   lockedBy: string | null;
   lockReason: string | null;
+  /** When a temporary lock expires; null for locks without a duration. */
+  lockedUntil: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +73,11 @@ export interface UpdateUserRequest {
 /** Reason payload for lock / suspend / deactivate. */
 export interface UserActionRequest {
   reason: string;
+  /**
+   * Temporary-lock duration in minutes (1–60). Omit for an indefinite lock.
+   * Only meaningful for the lock action — the backend ignores it elsewhere.
+   */
+  durationMinutes?: number;
 }
 
 /** PATCH /api/users/{id}/roles body. */
@@ -109,7 +116,6 @@ export const ApprovalAction = {
   USER_DEACTIVATE: "USER_DEACTIVATE",
   USER_SUSPEND: "USER_SUSPEND",
   USER_LOCK: "USER_LOCK",
-  USER_UNLOCK: "USER_UNLOCK",
   USER_UNSUSPEND: "USER_UNSUSPEND",
   ROLE_ASSIGN_PERMISSION: "ROLE_ASSIGN_PERMISSION",
   ACTIVATE_USER: "ACTIVATE_USER",

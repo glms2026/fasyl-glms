@@ -244,7 +244,6 @@ export const knownAuditActions: readonly string[] = [
   "USER_DEACTIVATE",
   "USER_SUSPEND",
   "USER_LOCK",
-  "USER_UNLOCK",
   "USER_UNSUSPEND",
   "ACTIVATE_USER",
   "ASSIGN_ROLE",

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 import { AssignRolesDialog } from "../components/AssignRolesDialog";
+import { LockDialog, type LockPayload } from "../components/LockDialog";
 import { ReasonDialog } from "../components/ReasonDialog";
 import { userFullName, type ManagedUser } from "../types";
 import {
@@ -13,7 +14,6 @@ import {
   useDeleteUser,
   useLockUser,
   useSuspendUser,
-  useUnlockUser,
   useUnsuspendUser,
 } from "./useUsers";
 
@@ -21,7 +21,6 @@ type ActionKind =
   | "lock"
   | "suspend"
   | "deactivate"
-  | "unlock"
   | "unsuspend"
   | "activate"
   | "assignRoles"
@@ -38,8 +37,10 @@ interface ActionTarget {
  *
  * Approval reality: lock / suspend / unsuspend / deactivate / assign-roles
  * queue an approval request instead of acting immediately, so their success
- * toasts say "submitted for approval". Unlock / activate / delete are
- * ADMIN-only direct operations that take effect instantly.
+ * toasts say "submitted for approval". Activate / delete are ADMIN-only
+ * direct operations that take effect instantly. Locks carry an optional
+ * duration: temporary locks auto-expire, indefinite ones stay until an
+ * administrator intervenes (the backend no longer exposes an unlock).
  *
  * Render `dialogs` once inside the consuming screen.
  */
@@ -76,13 +77,6 @@ export function useUserActions() {
     },
   });
 
-  const unlock = useUnlockUser({
-    onSuccess: (message) => {
-      toast.success(message || "Account unlocked.");
-      close();
-    },
-  });
-
   const unsuspend = useUnsuspendUser({
     onSuccess: () => {
       toast.success("Unsuspension request submitted for approval.");
@@ -106,21 +100,20 @@ export function useUserActions() {
 
   const dialogs = (
     <>
-      <ReasonDialog
+      <LockDialog
         open={target?.kind === "lock"}
         title="Lock account"
         description={
           target
-            ? `${userFullName(target.user)} won't be able to sign in until an authorizer approves and an administrator unlocks the account.`
+            ? `${userFullName(target.user)} won't be able to sign in once an authorizer approves the request. Temporary locks expire on their own; indefinite locks stay until an administrator intervenes.`
             : undefined
         }
-        confirmLabel="Submit lock request"
         onClose={close}
         isPending={lock.isPending}
         error={lock.error}
-        onConfirm={(reason) => {
+        onConfirm={({ reason, durationMinutes }: LockPayload) => {
           if (!target) return;
-          lock.mutate({ id: target.user.id, reason });
+          lock.mutate({ id: target.user.id, reason, durationMinutes });
         }}
       />
 
@@ -171,24 +164,6 @@ export function useUserActions() {
           if (!target) return;
           assignRoles.mutate({ id: target.user.id, payload: { roles, reason } });
         }}
-      />
-
-      <ConfirmDialog
-        open={target?.kind === "unlock"}
-        onClose={close}
-        onConfirm={() => {
-          if (!target) return;
-          unlock.mutate(target.user.id);
-        }}
-        title="Unlock account"
-        description={
-          target
-            ? `${userFullName(target.user)} will be able to sign in again immediately.`
-            : undefined
-        }
-        confirmLabel="Unlock"
-        isPending={unlock.isPending}
-        error={unlock.error}
       />
 
       <ReasonDialog
@@ -253,7 +228,6 @@ export function useUserActions() {
     openLock: (user: ManagedUser) => setTarget({ kind: "lock", user }),
     openSuspend: (user: ManagedUser) => setTarget({ kind: "suspend", user }),
     openDeactivate: (user: ManagedUser) => setTarget({ kind: "deactivate", user }),
-    openUnlock: (user: ManagedUser) => setTarget({ kind: "unlock", user }),
     openUnsuspend: (user: ManagedUser) => setTarget({ kind: "unsuspend", user }),
     openActivate: (user: ManagedUser) => setTarget({ kind: "activate", user }),
     openAssignRoles: (user: ManagedUser) => setTarget({ kind: "assignRoles", user }),

@@ -86,15 +86,15 @@ export function useAssignRoles({ onSuccess, onError }: MutationCallbacks<unknown
 }
 
 export function useLockUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
-  return useApiMutation<{ id: number; reason: string }, unknown>(
-    ({ id, reason }) => userService.lock(id, { reason } satisfies UserActionRequest),
-    { invalidates: [userQueryKeys.all], onSuccess, onError },
-  );
-}
-
-export function useUnlockUser({ onSuccess, onError }: MutationCallbacks<string> = {}) {
-  return useApiMutation<number, string>(
-    (id) => userService.unlock(id),
+  return useApiMutation<
+    { id: number; reason: string; durationMinutes?: number },
+    unknown
+  >(
+    ({ id, reason, durationMinutes }) =>
+      userService.lock(
+        id,
+        { reason, durationMinutes } satisfies UserActionRequest,
+      ),
     { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }

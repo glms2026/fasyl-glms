@@ -7,7 +7,6 @@ import {
   ShieldPlus,
   SquarePen,
   Trash2,
-  Unlock,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -98,17 +97,6 @@ export default function UserDetailPage() {
             Suspend
           </Button>
         </>
-      )}
-
-      {status === "LOCKED" && access.canAdminDirect && (
-        <Button
-          size="lg"
-          className={heroGhostButtonClass}
-          onClick={() => actions.openUnlock(user)}
-        >
-          <Unlock className="size-4" />
-          Unlock
-        </Button>
       )}
 
       {status === "SUSPENDED" && (
@@ -247,6 +235,13 @@ export default function UserDetailPage() {
 
             {user.lockReason && (
               <DetailRow label="Lock reason" value={user.lockReason} />
+            )}
+
+            {user.lockedUntil && (
+              <DetailRow
+                label="Locked until"
+                value={formatDateTime(user.lockedUntil)}
+              />
             )}
 
             {user.suspendedAt && (

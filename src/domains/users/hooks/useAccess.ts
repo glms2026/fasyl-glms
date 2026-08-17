@@ -9,8 +9,9 @@ import { useAuthStore } from "@/domains/auth/stores/authStore";
  * - Maker ops (create, update, lock, suspend, unsuspend, deactivate,
  *   assign roles, assign/remove role permissions): CONTROL, ADMIN
  * - Checker ops (approve / reject, view the pending queue): AUTHORIZER, ADMIN
- * - Admin-direct ops (activate, unlock, delete user, clear role
- *   permissions): ADMIN only
+ * - Admin-direct ops (activate, delete user, clear role permissions):
+ *   ADMIN only. Locks are duration-based now and there is no unlock.
+
  */
 export function useAccess() {
   const roles = useAuthStore((state) => state.user?.roles) ?? [];
@@ -29,7 +30,7 @@ export function useAccess() {
     canMakeChanges: isAdmin || isControl,
     /** May act as checker: approve / reject and view the pending queue. */
     canReview: isAdmin || isAuthorizer,
-    /** May run immediate admin-direct operations (activate / unlock / delete). */
+    /** May run immediate admin-direct operations (activate / delete). */
     canAdminDirect: isAdmin,
   };
 }

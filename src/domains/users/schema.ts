@@ -84,6 +84,36 @@ export const actionReasonSchema = z.object({
     .max(1000, "Keep the reason under 1,000 characters"),
 });
 
+/**
+ * Lock payload — reason plus the new temporary-lock capability. A lock is
+ * either temporary (auto-expires after `durationMinutes`, 1–60) or
+ * indefinite (no duration is sent to the API).
+ */
+export const lockUserSchema = z
+  .object({
+    reason: z
+      .string()
+      .trim()
+      .min(3, "Add a short reason (at least 3 characters)")
+      .max(1000, "Keep the reason under 1,000 characters"),
+    mode: z.enum(["temporary", "indefinite"]),
+    durationMinutes: z
+      .number({ message: "Enter how long the lock should last" })
+      .int("Enter whole minutes")
+      .min(1, "Enter how long the lock should last")
+      .max(60, "Temporary locks last at most 60 minutes")
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.mode === "temporary" && value.durationMinutes === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["durationMinutes"],
+        message: "Enter how long the lock should last",
+      });
+    }
+  });
+
 export const approvalDecisionSchema = z.object({
   remark: z
     .string()
@@ -96,4 +126,5 @@ export type CreateUserFormValues = z.infer<typeof createUserSchema>;
 export type EditUserFormValues = z.infer<typeof editUserSchema>;
 export type AssignRolesFormValues = z.infer<typeof assignRolesSchema>;
 export type ActionReasonFormValues = z.infer<typeof actionReasonSchema>;
+export type LockUserFormValues = z.infer<typeof lockUserSchema>;
 export type ApprovalDecisionFormValues = z.infer<typeof approvalDecisionSchema>;

@@ -202,7 +202,6 @@ export default function UsersListPage() {
             onEdit={(target) => navigate(`/users/${target.id}/edit`)}
             onAssignRoles={actions.openAssignRoles}
             onLock={actions.openLock}
-            onUnlock={actions.openUnlock}
             onSuspend={actions.openSuspend}
             onUnsuspend={actions.openUnsuspend}
             onDelete={actions.openDelete}

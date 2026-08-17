@@ -18,8 +18,9 @@ import type {
  * unsuspend, deactivate, assign roles) do NOT take effect immediately — they
  * create an approval request that an authorizer must approve. Those methods
  * return a `UserApprovalRequest`; the UI should tell the user the change is
- * pending. Only activate / unlock / delete act instantly, and those three
- * are ADMIN-only on the backend.
+ * pending. Only activate / delete act instantly, and those are ADMIN-only
+ * on the backend. Locks are duration-based: pass `durationMinutes` for a
+ * temporary lock that auto-expires, or omit it for an indefinite one.
  */
 export const userService = {
   /** GET /api/users — Spring-paginated. */
@@ -104,13 +105,6 @@ export const userService = {
       `/users/${id}/lock`,
       payload,
     );
-
-    return response.data;
-  },
-
-  /** PUT /api/users/{id}/unlock — instant. */
-  async unlock(id: number): Promise<string> {
-    const response = await apiClient.put<string>(`/users/${id}/unlock`);
 
     return response.data;
   },

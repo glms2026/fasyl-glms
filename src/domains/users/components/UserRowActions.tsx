@@ -8,7 +8,6 @@ import {
   ShieldPlus,
   SquarePen,
   Trash2,
-  Unlock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,7 +33,6 @@ interface UserRowActionsProps {
   onEdit: (user: ManagedUser) => void;
   onAssignRoles: (user: ManagedUser) => void;
   onLock: (user: ManagedUser) => void;
-  onUnlock: (user: ManagedUser) => void;
   onSuspend: (user: ManagedUser) => void;
   onUnsuspend: (user: ManagedUser) => void;
   onDelete: (user: ManagedUser) => void;
@@ -46,7 +44,6 @@ export function UserRowActions({
   onEdit,
   onAssignRoles,
   onLock,
-  onUnlock,
   onSuspend,
   onUnsuspend,
   onDelete,
@@ -145,57 +142,50 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          <DropdownMenuSeparator />
-
-          <DropdownMenuLabel>Access</DropdownMenuLabel>
-
-          {status === "ACTIVE" && access.canMakeChanges && (
+          {(status === "ACTIVE" && access.canMakeChanges) ||
+          (status === "SUSPENDED" && access.canMakeChanges) ? (
             <>
-              <DropdownMenuItem
-                icon={<Lock />}
-                onClick={() => {
-                  close();
-                  onLock(user);
-                }}
-              >
-                Lock user
-              </DropdownMenuItem>
+              <DropdownMenuSeparator />
 
-              <DropdownMenuItem
-                icon={<PauseCircle />}
-                onClick={() => {
-                  close();
-                  onSuspend(user);
-                }}
-              >
-                Suspend user
-              </DropdownMenuItem>
+              <DropdownMenuLabel>Access</DropdownMenuLabel>
+
+              {status === "ACTIVE" && access.canMakeChanges && (
+                <>
+                  <DropdownMenuItem
+                    icon={<Lock />}
+                    onClick={() => {
+                      close();
+                      onLock(user);
+                    }}
+                  >
+                    Lock user
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    icon={<PauseCircle />}
+                    onClick={() => {
+                      close();
+                      onSuspend(user);
+                    }}
+                  >
+                    Suspend user
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {status === "SUSPENDED" && access.canMakeChanges && (
+                <DropdownMenuItem
+                  icon={<PlayCircle />}
+                  onClick={() => {
+                    close();
+                    onUnsuspend(user);
+                  }}
+                >
+                  Unsuspend
+                </DropdownMenuItem>
+              )}
             </>
-          )}
-
-          {status === "LOCKED" && access.canAdminDirect && (
-            <DropdownMenuItem
-              icon={<Unlock />}
-              onClick={() => {
-                close();
-                onUnlock(user);
-              }}
-            >
-              Unlock account
-            </DropdownMenuItem>
-          )}
-
-          {status === "SUSPENDED" && access.canMakeChanges && (
-            <DropdownMenuItem
-              icon={<PlayCircle />}
-              onClick={() => {
-                close();
-                onUnsuspend(user);
-              }}
-            >
-              Unsuspend
-            </DropdownMenuItem>
-          )}
+          ) : null}
         </>
       )}
     </DropdownMenu>
