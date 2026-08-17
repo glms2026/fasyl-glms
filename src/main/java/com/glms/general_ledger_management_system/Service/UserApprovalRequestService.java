@@ -19,6 +19,7 @@ import com.glms.general_ledger_management_system.Repository.PermissionRepository
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -60,6 +61,21 @@ public class UserApprovalRequestService {
 
 
     /**
+     * Default lock duration (minutes) when the maker does
+     * not specify one.
+     */
+    @Value("${security.account.lock-duration-minutes:30}")
+    private long lockDurationMinutes;
+
+
+    /**
+     * Maximum lock duration a maker may request (minutes).
+     */
+    @Value("${security.account.lock-max-minutes:60}")
+    private int lockMaxMinutes;
+
+
+    /**
      * ============================================================
      * CREATE GENERAL APPROVAL REQUEST
      * ============================================================
@@ -73,7 +89,6 @@ public class UserApprovalRequestService {
      * USER_SUSPEND
      * USER_UNSUSPEND
      * USER_LOCK
-     * USER_UNLOCK
      *
      * ASSIGN_ROLE must use the dedicated
      * createRoleAssignmentApprovalRequest() method.
@@ -84,6 +99,27 @@ public class UserApprovalRequestService {
             Long userId,
             UserApprovalAction actionType,
             String reason
+    ) {
+
+        return createApprovalRequest(
+                userId,
+                actionType,
+                reason,
+                null
+        );
+    }
+
+
+    /**
+     * Same as the three-argument version but also accepts
+     * the requested lock duration (minutes) for USER_LOCK
+     * requests.
+     */
+    public UserApprovalRequest createApprovalRequest(
+            Long userId,
+            UserApprovalAction actionType,
+            String reason,
+            Integer durationMinutes
     ) {
 
         validateUserId(userId);
@@ -150,6 +186,22 @@ public class UserApprovalRequestService {
         );
 
 
+        /*
+         * USER_LOCK: persist the requested lock duration on the
+         * target user so the auto-unlock timer knows how long
+         * the lock lasts. Falls back to the configured default
+         * when no duration is supplied.
+         */
+        if (actionType == UserApprovalAction.USER_LOCK) {
+
+            targetUser.setLockDurationMinutes(
+                    resolveLockDuration(durationMinutes)
+            );
+
+            userRepository.save(targetUser);
+        }
+
+
         UserApprovalRequest request =
                 UserApprovalRequest.builder()
                         .user(targetUser)
@@ -179,6 +231,40 @@ public class UserApprovalRequestService {
 
 
         return savedRequest;
+    }
+
+
+    /**
+     * ============================================================
+     * RESOLVE LOCK DURATION
+     * ============================================================
+     *
+     * Validates the maker-supplied lock duration (minutes) and
+     * falls back to the configured default when not supplied.
+     */
+    private int resolveLockDuration(
+            Integer durationMinutes
+    ) {
+
+        if (durationMinutes == null) {
+
+            return (int) Math.min(
+                    lockDurationMinutes,
+                    lockMaxMinutes
+            );
+        }
+
+        if (durationMinutes < 1
+                || durationMinutes > lockMaxMinutes) {
+
+            throw new IllegalArgumentException(
+                    "Lock duration must be between 1 and "
+                            + lockMaxMinutes
+                            + " minutes"
+            );
+        }
+
+        return durationMinutes;
     }
 
 
@@ -1654,6 +1740,21 @@ public class UserApprovalRequestService {
                 );
 
 
+                /*
+                 * Ensure the lock has a duration for the
+                 * auto-unlock timer (default when absent).
+                 */
+                if (user.getLockDurationMinutes() == null) {
+
+                    user.setLockDurationMinutes(
+                            (int) Math.min(
+                                    lockDurationMinutes,
+                                    lockMaxMinutes
+                            )
+                    );
+                }
+
+
                 user.setUpdatedAt(
                         LocalDateTime.now()
                 );
@@ -1664,64 +1765,6 @@ public class UserApprovalRequestService {
                  */
                 revokeUserAuthentication(
                         user
-                );
-            }
-
-
-            /*
-             * ====================================================
-             * UNLOCK USER
-             * ====================================================
-             */
-            case USER_UNLOCK -> {
-
-                if (user.getStatus()
-                        != UserStatus.LOCKED) {
-
-                    throw new IllegalStateException(
-                            "User account is not locked"
-                    );
-                }
-
-
-                user.setStatus(
-                        UserStatus.ACTIVE
-                );
-
-
-                /*
-                 * Reset failed-login security counters.
-                 */
-                user.setFailedLoginAttempts(
-                        0
-                );
-
-
-                user.setLockoutTime(
-                        null
-                );
-
-
-                /*
-                 * Clear lock metadata.
-                 */
-                user.setLockedAt(
-                        null
-                );
-
-
-                user.setLockedBy(
-                        null
-                );
-
-
-                user.setLockReason(
-                        null
-                );
-
-
-                user.setUpdatedAt(
-                        LocalDateTime.now()
                 );
             }
 
@@ -2229,7 +2272,6 @@ public class UserApprovalRequestService {
                          "USER_SUSPEND",
                          "USER_UNSUSPEND",
                          "USER_LOCK",
-                         "USER_UNLOCK",
                          "USER_CREATE",
                          "ASSIGN_ROLE" -> true;
 
@@ -2397,18 +2439,6 @@ public class UserApprovalRequestService {
 
                     throw new IllegalStateException(
                             "Suspended account cannot be locked"
-                    );
-                }
-            }
-
-
-            case USER_UNLOCK -> {
-
-                if (user.getStatus()
-                        != UserStatus.LOCKED) {
-
-                    throw new IllegalStateException(
-                            "User account is not locked"
                     );
                 }
             }

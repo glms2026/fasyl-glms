@@ -97,6 +97,13 @@ public class User {
     @Column(name = "locked_by")
     private String lockedBy;
 
+    /**
+     * How long this lock lasts (minutes). Set when a maker
+     * locks the user; used by the auto-unlock timer.
+     */
+    @Column(name = "lock_duration_minutes")
+    private Integer lockDurationMinutes;
+
 
     /**
      * ============================================================

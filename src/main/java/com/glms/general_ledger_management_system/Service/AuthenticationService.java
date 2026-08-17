@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -49,6 +50,8 @@ public class AuthenticationService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     private final RefreshTokenService refreshTokenService;
+
+    private final UserService userService;
 
 
     /**
@@ -282,8 +285,17 @@ public class AuthenticationService {
 
         /*
          * LOCKED
+         *
+         * Locks are temporary: if the configured duration has
+         * expired, the account is auto-unlocked (no approval
+         * needed) and the login is allowed to proceed.
          */
         if (UserStatus.LOCKED.equals(status)) {
+
+            if (userService.unlockIfExpired(user)) {
+
+                return;
+            }
 
             throw new IllegalStateException(
                     "Account is locked"
@@ -352,6 +364,10 @@ public class AuthenticationService {
 
             user.setLockoutTime(
                     LocalDateTime.now()
+            );
+
+            user.setLockedAt(
+                    ZonedDateTime.now()
             );
 
 

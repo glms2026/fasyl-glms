@@ -13,8 +13,10 @@ import com.glms.general_ledger_management_system.Repository.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -25,8 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,6 +60,14 @@ public class UserService {
             approvalRequestRepository;
 
     private final ObjectMapper objectMapper;
+
+
+    /**
+     * How long a locked account stays locked (minutes)
+     * before it is auto-unlocked without approval.
+     */
+    @Value("${security.account.lock-duration-minutes:30}")
+    private long lockDurationMinutes;
 
 
     /**
@@ -984,99 +996,90 @@ public class UserService {
 
     /**
      * ============================================================
-     * LOCK USER
+     * AUTO-UNLOCK EXPIRED LOCKS
      * ============================================================
+     *
+     * Locks are temporary. Once the configured duration has
+     * passed, the account is unlocked automatically without
+     * any approval. Returns true if the user was unlocked.
      */
-    public void lockUser(
-            Long id
+    public boolean unlockIfExpired(
+            User user
     ) {
 
-        User user =
-                findUser(id);
+        if (user == null
+                || user.getStatus() != UserStatus.LOCKED) {
 
-        preventAdminModification(user);
-
-        if (user.getStatus()
-                == UserStatus.LOCKED) {
-
-            throw new IllegalStateException(
-                    "User account is already locked"
-            );
+            return false;
         }
 
-        if (user.getStatus()
-                == UserStatus.INACTIVE) {
 
-            throw new IllegalStateException(
-                    "Inactive account cannot be locked"
-            );
+        ZonedDateTime lockStart =
+                resolveLockStart(user);
+
+        if (lockStart == null) {
+
+            return false;
         }
 
-        if (user.getStatus()
-                == UserStatus.SUSPENDED) {
 
-            throw new IllegalStateException(
-                    "Suspended account cannot be locked"
-            );
+        long durationMinutes =
+                user.getLockDurationMinutes() != null
+                        ? user.getLockDurationMinutes()
+                        : lockDurationMinutes;
+
+        if (lockStart.plusMinutes(durationMinutes)
+                .isAfter(ZonedDateTime.now())) {
+
+            return false;
         }
 
-        user.setStatus(
-                UserStatus.LOCKED
+
+        applyUnlock(
+                user,
+                "SYSTEM",
+                "AUTO_UNLOCK",
+                "Account auto-unlocked after lock duration expired: "
         );
 
-        user.setLockedAt(
-                ZonedDateTime.now()
-        );
-
-        user.setLockedBy(
-                getCurrentUsername()
-        );
-
-        user.setLockReason(
-                "Locked by administrator"
-        );
-
-        user.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        userRepository.save(user);
-
-        revokeUserTokens(user);
-
-        refreshTokenService
-                .revokeAllUserTokens(
-                        user.getId()
-                );
-
-        createAuditLog(
-                getCurrentUsername(),
-                "LOCK_USER",
-                "Locked user: "
-                        + user.getUsername()
-        );
+        return true;
     }
 
 
     /**
-     * ============================================================
-     * UNLOCK USER
-     * ============================================================
+     * Resolve the timestamp the lock started, preferring
+     * lockedAt (manual locks) and falling back to lockoutTime
+     * (automatic locks after repeated failed logins).
      */
-    public void unlockUser(
-            Long id
+    private ZonedDateTime resolveLockStart(
+            User user
     ) {
 
-        User user =
-                findUser(id);
+        if (user.getLockedAt() != null) {
 
-        if (user.getStatus()
-                != UserStatus.LOCKED) {
-
-            throw new IllegalStateException(
-                    "User account is not locked"
-            );
+            return user.getLockedAt();
         }
+
+        if (user.getLockoutTime() != null) {
+
+            return user.getLockoutTime()
+                    .atZone(ZoneId.systemDefault());
+        }
+
+        return null;
+    }
+
+
+    /**
+     * Shared unlock transition used by the manual admin
+     * unlock and the automatic lock-expiry unlock.
+     */
+    private void applyUnlock(
+            User user,
+            String actor,
+            String auditAction,
+            String auditDescription
+    ) {
 
         user.setStatus(
                 UserStatus.ACTIVE
@@ -1099,11 +1102,33 @@ public class UserService {
         userRepository.save(user);
 
         createAuditLog(
-                getCurrentUsername(),
-                "UNLOCK_USER",
-                "Unlocked user: "
+                actor,
+                auditAction,
+                auditDescription
                         + user.getUsername()
         );
+    }
+
+
+    /**
+     * Scheduled sweep: every 5 minutes, unlock any LOCKED
+     * accounts whose lock duration has expired.
+     */
+    @Scheduled(
+            fixedDelay = 300_000,
+            initialDelay = 60_000
+    )
+    public void autoUnlockExpiredLocks() {
+
+        List<User> lockedUsers =
+                userRepository.findAllByStatus(
+                        UserStatus.LOCKED
+                );
+
+        for (User user : lockedUsers) {
+
+            unlockIfExpired(user);
+        }
     }
 
 

@@ -177,10 +177,6 @@ public class PermissionInitializer {
                 "Delete or permanently remove a user account"
         );
 
-        createPermission(
-                "USER_UNLOCK",
-                "Unlock a locked user account"
-        );
     }
 
 

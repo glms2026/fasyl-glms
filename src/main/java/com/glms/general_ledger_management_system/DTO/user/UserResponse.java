@@ -46,6 +46,12 @@ public class UserResponse {
 
     private String lockReason;
 
+    /**
+     * When the lock expires and the account is
+     * auto-unlocked (lockedAt + lock duration).
+     */
+    private ZonedDateTime lockedUntil;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

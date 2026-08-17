@@ -104,7 +104,10 @@ public class UserApprovalRequestController {
 
             @RequestParam
             @NotBlank(message = "Reason is required")
-            String reason
+            String reason,
+
+            @RequestParam(required = false)
+            Integer durationMinutes
 
     ) {
 
@@ -112,7 +115,8 @@ public class UserApprovalRequestController {
                 approvalRequestService.createApprovalRequest(
                         userId,
                         actionType,
-                        reason
+                        reason,
+                        durationMinutes
                 );
 
 

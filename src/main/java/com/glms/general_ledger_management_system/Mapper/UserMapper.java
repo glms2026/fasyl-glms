@@ -8,13 +8,24 @@ import com.glms.general_ledger_management_system.Model.Role;
 import com.glms.general_ledger_management_system.Model.User;
 
 import com.glms.general_ledger_management_system.Model.UserStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.stream.Collectors;
 
 
 @Component
 public class UserMapper {
+
+
+    /**
+     * How long a locked account stays locked (minutes)
+     * before it is auto-unlocked without approval.
+     */
+    @Value("${security.account.lock-duration-minutes:30}")
+    private long lockDurationMinutes;
 
 
     /**
@@ -121,8 +132,44 @@ public class UserMapper {
                         user.getUpdatedAt()
                 )
 
+                .lockedUntil(
+                        user.getStatus() == UserStatus.LOCKED
+                                ? resolveLockedUntil(user)
+                                : null
+                )
+
                 .build();
 
+    }
+
+
+    /**
+     * Compute when the current lock expires:
+     * lock start + configured duration.
+     */
+    private ZonedDateTime resolveLockedUntil(
+            User user
+    ) {
+
+        long durationMinutes =
+                user.getLockDurationMinutes() != null
+                        ? user.getLockDurationMinutes()
+                        : lockDurationMinutes;
+
+        if (user.getLockedAt() != null) {
+
+            return user.getLockedAt()
+                    .plusMinutes(durationMinutes);
+        }
+
+        if (user.getLockoutTime() != null) {
+
+            return user.getLockoutTime()
+                    .atZone(ZoneId.systemDefault())
+                    .plusMinutes(durationMinutes);
+        }
+
+        return null;
     }
 
 }

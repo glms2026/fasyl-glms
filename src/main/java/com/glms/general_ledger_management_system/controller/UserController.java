@@ -373,39 +373,13 @@ public class UserController {
                 approvalRequestService.createApprovalRequest(
                         id,
                         UserApprovalAction.USER_LOCK,
-                        actionRequest.getReason()
+                        actionRequest.getReason(),
+                        actionRequest.getDurationMinutes()
                 );
 
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
                 .body(toResponse(request));
-    }
-
-
-    /**
-     * ============================================================
-     * UNLOCK USER
-     * ============================================================
-     *
-     * ADMIN-only direct operation.
-     */
-    @PutMapping("/{id}/unlock")
-    @PreAuthorize(
-            "hasRole('ADMIN')"
-    )
-    @Operation(
-            summary = "Unlock user",
-            description = "Unlocks a locked user account (ADMIN only)"
-    )
-    public ResponseEntity<String> unlockUser(
-            @PathVariable Long id
-    ) {
-
-        userService.unlockUser(id);
-
-        return ResponseEntity.ok(
-                "User unlocked successfully"
-        );
     }
 
 
