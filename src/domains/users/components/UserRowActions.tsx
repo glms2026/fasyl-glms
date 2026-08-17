@@ -9,7 +9,6 @@ import {
   SquarePen,
   Trash2,
   Unlock,
-  UserRoundX,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,8 +37,6 @@ interface UserRowActionsProps {
   onUnlock: (user: ManagedUser) => void;
   onSuspend: (user: ManagedUser) => void;
   onUnsuspend: (user: ManagedUser) => void;
-  onDeactivate: (user: ManagedUser) => void;
-  onActivate: (user: ManagedUser) => void;
   onDelete: (user: ManagedUser) => void;
 }
 
@@ -52,8 +49,6 @@ export function UserRowActions({
   onUnlock,
   onSuspend,
   onUnsuspend,
-  onDeactivate,
-  onActivate,
   onDelete,
 }: UserRowActionsProps) {
   const status = user.status;
@@ -175,17 +170,6 @@ export function UserRowActions({
               >
                 Suspend user
               </DropdownMenuItem>
-
-              <DropdownMenuItem
-                icon={<UserRoundX />}
-                variant="destructive"
-                onClick={() => {
-                  close();
-                  onDeactivate(user);
-                }}
-              >
-                Deactivate
-              </DropdownMenuItem>
             </>
           )}
 
@@ -201,46 +185,17 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          {status === "SUSPENDED" && (
-            <>
-              {access.canMakeChanges && (
-                <DropdownMenuItem
-                  icon={<PlayCircle />}
-                  onClick={() => {
-                    close();
-                    onUnsuspend(user);
-                  }}
-                >
-                  Unsuspend
-                </DropdownMenuItem>
-              )}
-
-              {access.canAdminDirect && (
-                <DropdownMenuItem
-                  icon={<PlayCircle />}
-                  onClick={() => {
-                    close();
-                    onActivate(user);
-                  }}
-                >
-                  Activate account
-                </DropdownMenuItem>
-              )}
-            </>
+          {status === "SUSPENDED" && access.canMakeChanges && (
+            <DropdownMenuItem
+              icon={<PlayCircle />}
+              onClick={() => {
+                close();
+                onUnsuspend(user);
+              }}
+            >
+              Unsuspend
+            </DropdownMenuItem>
           )}
-
-          {(status === "INACTIVE" || status === "PASSWORD_EXPIRED") &&
-            access.canAdminDirect && (
-              <DropdownMenuItem
-                icon={<PlayCircle />}
-                onClick={() => {
-                  close();
-                  onActivate(user);
-                }}
-              >
-                Activate account
-              </DropdownMenuItem>
-            )}
         </>
       )}
     </DropdownMenu>

@@ -205,8 +205,6 @@ export default function UsersListPage() {
             onUnlock={actions.openUnlock}
             onSuspend={actions.openSuspend}
             onUnsuspend={actions.openUnsuspend}
-            onDeactivate={actions.openDeactivate}
-            onActivate={actions.openActivate}
             onDelete={actions.openDelete}
           />
         </div>

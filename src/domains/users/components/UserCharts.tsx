@@ -42,6 +42,31 @@ const tooltipStyle = {
   fontSize: 13,
 } as const;
 
+/** Hover card for the growth chart: month, cumulative total, and adds. */
+function GrowthTooltip(props: {
+  active?: boolean;
+  payload?: ReadonlyArray<{ payload: UserGrowthPoint }>;
+}) {
+  const point = props.payload?.[0]?.payload;
+  if (!props.active || !point) return null;
+
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-xs shadow-lg">
+      <p className="font-semibold text-neutral-900">{point.month}</p>
+
+      <div className="mt-1.5 flex items-center justify-between gap-8">
+        <span className="text-neutral-500">Total users</span>
+        <span className="font-semibold text-neutral-900">{point.total}</span>
+      </div>
+
+      <div className="mt-0.5 flex items-center justify-between gap-8">
+        <span className="text-neutral-500">Added</span>
+        <span className="font-semibold text-emerald-600">+{point.added}</span>
+      </div>
+    </div>
+  );
+}
+
 function ChartFrame({
   isLoading,
   hasData,
@@ -89,7 +114,7 @@ export function UserGrowthChart({
           <XAxis dataKey="month" {...axisProps} />
           <YAxis allowDecimals={false} {...axisProps} />
 
-          <Tooltip contentStyle={tooltipStyle} />
+          <Tooltip content={<GrowthTooltip />} />
 
           <Area
             type="monotone"

@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 import { AuditDetailDialog } from "../components/AuditDetailDialog";
 import { AuditFilters } from "../components/AuditFilters";
-import { AuditTimeline } from "../components/AuditTimeline";
+import { AuditTable } from "../components/AuditTable";
 import { ExportButton } from "../components/ExportButton";
 import { LiveIndicator } from "../components/LiveIndicator";
 import { useAuditLogsQuery } from "../hooks/useAuditLogs";
@@ -35,19 +35,30 @@ const PAGE_SIZE_OPTIONS = [25, 50];
 const AUTO_REFRESH_MS = 60_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function TimelineSkeleton() {
+function TableSkeleton() {
   return (
-    <div className="space-y-4 py-2" aria-hidden="true">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="flex items-start gap-4 px-2">
-          <Skeleton className="size-9 shrink-0 rounded-full" />
-
-          <div className="flex-1 space-y-2 pt-1.5">
-            <Skeleton className="h-4 w-2/5" />
-            <Skeleton className="h-3 w-4/5" />
-          </div>
+    <div aria-hidden="true" className="overflow-x-auto">
+      <div className="min-w-[52rem]">
+        {/* Header row. */}
+        <div className="flex gap-6 border-b border-neutral-200 bg-gradient-to-b from-neutral-50 to-white px-6 py-3.5">
+          <Skeleton className="h-3.5 w-20" />
+          <Skeleton className="h-3.5 w-16" />
+          <Skeleton className="h-3.5 w-28" />
+          <Skeleton className="ml-auto h-3.5 w-14" />
         </div>
-      ))}
+
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-6 border-b border-neutral-100 py-4 pr-6 pl-[calc(1.5rem+3px)]"
+          >
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="ml-auto h-4 w-20" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -299,7 +310,7 @@ export default function AuditLogsPage() {
 
           {showSkeleton && (
             <div className="px-3 py-3">
-              <TimelineSkeleton />
+              <TableSkeleton />
             </div>
           )}
 
@@ -340,7 +351,7 @@ export default function AuditLogsPage() {
           )}
 
           {!showSkeleton && !showError && pageEntries.length > 0 && (
-            <AuditTimeline
+            <AuditTable
               key={`${safePage}:${pageSize}:${debouncedSearch}:${action}:${from}:${to}`}
               entries={pageEntries}
               onSelect={setSelected}

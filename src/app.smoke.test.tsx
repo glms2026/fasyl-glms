@@ -236,14 +236,18 @@ describe("app smoke", () => {
       { timeout: 5000 },
     );
 
-    // Timeline rows carry descriptive labels: "View USER_CREATE event by …".
+    // The trail renders as a table — one body row per audit event, each
+    // showing the action name, actor and a timestamp.
     await waitFor(
-      () =>
-        expect(
-          screen.getAllByRole("button", { name: /view .* event by/i }).length,
-        ).toBeGreaterThan(0),
+      () => expect(document.querySelectorAll("tbody tr").length).toBe(8),
       { timeout: 5000 },
     );
+
+    const body = document.querySelector("tbody");
+    expect(body).not.toBeNull();
+    expect(body?.textContent).toMatch(/User Create/);
+    expect(body?.textContent).toMatch(/aokonkwo/);
+    expect(body?.textContent).toMatch(/Sample audit description 1/);
   });
 
   it("keeps the audit trail out of reach for non-admin roles", async () => {

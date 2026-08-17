@@ -68,35 +68,104 @@ export const actionToneStyles: Record<ActionTone, string> = {
  * same tint so the card still signals interactivity.
  */
 export const actionCardClasses: Record<ActionTone, string> = {
-  create: "bg-gradient-to-br from-emerald-100/70 via-white to-emerald-50/25",
-  assign: "bg-gradient-to-br from-teal-100/70 via-white to-teal-50/25",
-  update: "bg-gradient-to-br from-blue-100/70 via-white to-blue-50/25",
-  read: "bg-gradient-to-br from-slate-200/70 via-white to-slate-100/25",
-  lock: "bg-gradient-to-br from-amber-100/70 via-white to-amber-50/25",
-  suspend: "bg-gradient-to-br from-orange-100/70 via-white to-orange-50/25",
-  deactivate: "bg-gradient-to-br from-red-100/70 via-white to-red-50/25",
-  recover: "bg-gradient-to-br from-green-100/70 via-white to-green-50/25",
-  auth: "bg-gradient-to-br from-indigo-100/70 via-white to-indigo-50/25",
-  password: "bg-gradient-to-br from-violet-100/70 via-white to-violet-50/25",
-  ledger: "bg-gradient-to-br from-cyan-100/70 via-white to-cyan-50/25",
-  permission: "bg-gradient-to-br from-purple-100/70 via-white to-purple-50/25",
-  neutral: "bg-gradient-to-br from-neutral-200/70 via-white to-neutral-100/25",
+  create: "bg-gradient-to-br from-emerald-200/80 via-emerald-100/30 to-white",
+  assign: "bg-gradient-to-br from-teal-200/80 via-teal-100/30 to-white",
+  update: "bg-gradient-to-br from-blue-200/80 via-blue-100/30 to-white",
+  read: "bg-gradient-to-br from-slate-300/80 via-slate-200/30 to-white",
+  lock: "bg-gradient-to-br from-amber-200/80 via-amber-100/30 to-white",
+  suspend: "bg-gradient-to-br from-orange-200/80 via-orange-100/30 to-white",
+  deactivate: "bg-gradient-to-br from-red-200/80 via-red-100/30 to-white",
+  recover: "bg-gradient-to-br from-green-200/80 via-green-100/30 to-white",
+  auth: "bg-gradient-to-br from-indigo-200/80 via-indigo-100/30 to-white",
+  password: "bg-gradient-to-br from-violet-200/80 via-violet-100/30 to-white",
+  ledger: "bg-gradient-to-br from-cyan-200/80 via-cyan-100/30 to-white",
+  permission: "bg-gradient-to-br from-purple-200/80 via-purple-100/30 to-white",
+  neutral: "bg-gradient-to-br from-neutral-300/80 via-neutral-200/30 to-white",
 };
 
 export const actionCardHoverClasses: Record<ActionTone, string> = {
-  create: "hover:from-emerald-200/60 hover:via-white hover:to-emerald-50/40",
-  assign: "hover:from-teal-200/60 hover:via-white hover:to-teal-50/40",
-  update: "hover:from-blue-200/60 hover:via-white hover:to-blue-50/40",
-  read: "hover:from-slate-300/60 hover:via-white hover:to-slate-100/40",
-  lock: "hover:from-amber-200/60 hover:via-white hover:to-amber-50/40",
-  suspend: "hover:from-orange-200/60 hover:via-white hover:to-orange-50/40",
-  deactivate: "hover:from-red-200/60 hover:via-white hover:to-red-50/40",
-  recover: "hover:from-green-200/60 hover:via-white hover:to-green-50/40",
-  auth: "hover:from-indigo-200/60 hover:via-white hover:to-indigo-50/40",
-  password: "hover:from-violet-200/60 hover:via-white hover:to-violet-50/40",
-  ledger: "hover:from-cyan-200/60 hover:via-white hover:to-cyan-50/40",
-  permission: "hover:from-purple-200/60 hover:via-white hover:to-purple-50/40",
-  neutral: "hover:from-neutral-300/60 hover:via-white hover:to-neutral-100/40",
+  create: "hover:from-emerald-300/80 hover:via-emerald-100/40 hover:to-white",
+  assign: "hover:from-teal-300/80 hover:via-teal-100/40 hover:to-white",
+  update: "hover:from-blue-300/80 hover:via-blue-100/40 hover:to-white",
+  read: "hover:from-slate-400/80 hover:via-slate-200/40 hover:to-white",
+  lock: "hover:from-amber-300/80 hover:via-amber-100/40 hover:to-white",
+  suspend: "hover:from-orange-300/80 hover:via-orange-100/40 hover:to-white",
+  deactivate: "hover:from-red-300/80 hover:via-red-100/40 hover:to-white",
+  recover: "hover:from-green-300/80 hover:via-green-100/40 hover:to-white",
+  auth: "hover:from-indigo-300/80 hover:via-indigo-100/40 hover:to-white",
+  password: "hover:from-violet-300/80 hover:via-violet-100/40 hover:to-white",
+  ledger: "hover:from-cyan-300/80 hover:via-cyan-100/40 hover:to-white",
+  permission: "hover:from-purple-300/80 hover:via-purple-100/40 hover:to-white",
+  neutral: "hover:from-neutral-400/80 hover:via-neutral-200/40 hover:to-white",
+};
+
+/** Left accent bar per tone — a thin coloured edge on the row's first cell. */
+export const actionRowAccentClasses: Record<ActionTone, string> = {
+  create: "border-l-emerald-400",
+  assign: "border-l-teal-400",
+  update: "border-l-blue-400",
+  read: "border-l-slate-300",
+  lock: "border-l-amber-400",
+  suspend: "border-l-orange-400",
+  deactivate: "border-l-red-400",
+  recover: "border-l-green-400",
+  auth: "border-l-indigo-400",
+  password: "border-l-violet-400",
+  ledger: "border-l-cyan-400",
+  permission: "border-l-purple-400",
+  neutral: "border-l-neutral-300",
+};
+
+/** Row wash per tone — a horizontal gradient that fades the theme colour
+ *  into white, so each table row keeps the card's colour identity. */
+export const actionRowClasses: Record<ActionTone, string> = {
+  create: "bg-gradient-to-r from-emerald-100/70 via-white to-white",
+  assign: "bg-gradient-to-r from-teal-100/70 via-white to-white",
+  update: "bg-gradient-to-r from-blue-100/70 via-white to-white",
+  read: "bg-gradient-to-r from-slate-200/60 via-white to-white",
+  lock: "bg-gradient-to-r from-amber-100/70 via-white to-white",
+  suspend: "bg-gradient-to-r from-orange-100/70 via-white to-white",
+  deactivate: "bg-gradient-to-r from-red-100/70 via-white to-white",
+  recover: "bg-gradient-to-r from-green-100/70 via-white to-white",
+  auth: "bg-gradient-to-r from-indigo-100/70 via-white to-white",
+  password: "bg-gradient-to-r from-violet-100/70 via-white to-white",
+  ledger: "bg-gradient-to-r from-cyan-100/70 via-white to-white",
+  permission: "bg-gradient-to-r from-purple-100/70 via-white to-white",
+  neutral: "bg-gradient-to-r from-neutral-200/60 via-white to-white",
+};
+
+/** Hover intensification of the row wash. */
+export const actionRowHoverClasses: Record<ActionTone, string> = {
+  create: "hover:from-emerald-200/60",
+  assign: "hover:from-teal-200/60",
+  update: "hover:from-blue-200/60",
+  read: "hover:from-slate-300/50",
+  lock: "hover:from-amber-200/60",
+  suspend: "hover:from-orange-200/60",
+  deactivate: "hover:from-red-200/60",
+  recover: "hover:from-green-200/60",
+  auth: "hover:from-indigo-200/60",
+  password: "hover:from-violet-200/60",
+  ledger: "hover:from-cyan-200/60",
+  permission: "hover:from-purple-200/60",
+  neutral: "hover:from-neutral-300/50",
+};
+
+/** Action-name text colour per tone, used inside table cells. */
+export const actionTextClasses: Record<ActionTone, string> = {
+  create: "text-emerald-700",
+  assign: "text-teal-700",
+  update: "text-blue-700",
+  read: "text-slate-600",
+  lock: "text-amber-700",
+  suspend: "text-orange-700",
+  deactivate: "text-red-700",
+  recover: "text-green-700",
+  auth: "text-indigo-700",
+  password: "text-violet-700",
+  ledger: "text-cyan-700",
+  permission: "text-purple-700",
+  neutral: "text-neutral-600",
 };
 
 /** Pill classes per tone for the ActionBadge in dialogs and summaries. */

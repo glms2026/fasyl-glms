@@ -17,12 +17,31 @@ interface MetricCardProps {
   className?: string;
 }
 
-const tones = {
-  default: "bg-primary/10 text-primary",
-  success: "bg-emerald-50 text-emerald-600",
-  warning: "bg-amber-50 text-amber-600",
-  destructive: "bg-red-50 text-red-600",
-} as const;
+interface ToneStyle {
+  /** Gradient wash — the card's background. */
+  card: string;
+  /** Solid white chip with a tone ring, so the icon pops on the wash. */
+  chip: string;
+}
+
+const tones: Record<NonNullable<MetricCardProps["tone"]>, ToneStyle> = {
+  default: {
+    card: "bg-gradient-to-br from-indigo-200/70 via-indigo-50/40 to-white",
+    chip: "bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-200",
+  },
+  success: {
+    card: "bg-gradient-to-br from-emerald-200/70 via-emerald-50/40 to-white",
+    chip: "bg-white text-emerald-600 shadow-sm ring-1 ring-emerald-200",
+  },
+  warning: {
+    card: "bg-gradient-to-br from-amber-200/70 via-amber-50/40 to-white",
+    chip: "bg-white text-amber-600 shadow-sm ring-1 ring-amber-200",
+  },
+  destructive: {
+    card: "bg-gradient-to-br from-red-200/70 via-red-50/40 to-white",
+    chip: "bg-white text-red-600 shadow-sm ring-1 ring-red-200",
+  },
+};
 
 export function MetricCard({
   label,
@@ -38,13 +57,14 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md",
+        "rounded-2xl border border-neutral-200 p-5 shadow-sm transition-shadow hover:shadow-md",
+        tones[tone].card,
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
-          <p className="truncate text-sm font-medium text-neutral-500">
+          <p className="truncate text-sm font-medium text-neutral-600">
             {label}
           </p>
 
@@ -60,7 +80,7 @@ export function MetricCard({
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-xl",
-            tones[tone],
+            tones[tone].chip,
           )}
         >
           <Icon className="size-5" aria-hidden="true" />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -16,6 +16,8 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { SectionCard } from "@/components/common/SectionCard";
 import { cn } from "@/lib/utils";
 
+import { toUtcDate } from "@/lib/format";
+
 import { ModuleHeader } from "../components/ModuleHeader";
 import { heroButtonClass } from "../components/heroStyles";
 import { PendingApprovalsList } from "../components/PendingApprovalsList";
@@ -28,11 +30,20 @@ import { useAccess } from "../hooks/useAccess";
 import { usePendingApprovalsQuery } from "../hooks/useApprovals";
 import { useAllUsersQuery } from "../hooks/useUsers";
 
-function monthLabel(offset: number): string {
-  const date = new Date();
-  date.setMonth(date.getMonth() - offset);
+/** How often the overview re-fetches the full user set for live charts. */
+const AUTO_REFRESH_MS = 60_000;
 
-  return date.toLocaleDateString("en-US", { month: "short" });
+/** Small pulsing badge that signals the overview is on a live refresh loop. */
+function LiveBadge() {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+      <span className="relative flex size-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+      </span>
+      Live
+    </span>
+  );
 }
 
 export default function UsersOverviewPage() {
@@ -42,8 +53,9 @@ export default function UsersOverviewPage() {
   // The pending queue endpoint is AUTHORIZER/ADMIN only.
   const pendingQuery = usePendingApprovalsQuery({ page: 0, size: 8 }, access.canReview);
 
-  // Captured once so the derived metrics stay stable across re-renders.
-  const [now] = useState(() => Date.now());
+  // Ticked by the live refresh loop so relative buckets (last 30 days, month
+  // boundaries) stay current instead of freezing at mount time.
+  const [now, setNow] = useState(() => Date.now());
 
   const { metrics, growth, roleDistribution, statusDistribution } = useMemo(() => {
     const users = usersQuery.data ?? [];
@@ -63,26 +75,39 @@ export default function UsersOverviewPage() {
 
     const previousTotal = Math.max(0, users.length - newThisMonth);
 
+    // Growth buckets use UTC month boundaries so zone-less backend
+    // timestamps land in the right bucket. `total` is cumulative through the
+    // end of each month (the current one included), so the line always ends
+    // at the live account total and moves as accounts are created.
+    const createdTimes = users
+      .map((user) => toUtcDate(user.createdAt).getTime())
+      .filter((time) => !Number.isNaN(time));
+
     const growth = Array.from({ length: 6 }).map((_, index) => {
       const offset = 5 - index;
+      const nowDate = new Date(now);
 
-      const cutoff = new Date();
-      cutoff.setMonth(cutoff.getMonth() - offset);
-      cutoff.setDate(1);
+      const monthStart = Date.UTC(
+        nowDate.getUTCFullYear(),
+        nowDate.getUTCMonth() - offset,
+        1,
+      );
+      const monthEnd = Date.UTC(
+        nowDate.getUTCFullYear(),
+        nowDate.getUTCMonth() - offset + 1,
+        1,
+      );
 
-      const windowStart = new Date(cutoff);
-      windowStart.setMonth(windowStart.getMonth() - 1);
-
-      const total = users.filter(
-        (user) => new Date(user.createdAt) < cutoff,
-      ).length;
-
-      const added = users.filter((user) => {
-        const created = new Date(user.createdAt);
-        return created >= windowStart && created < cutoff;
-      }).length;
-
-      return { month: monthLabel(offset), total, added };
+      return {
+        month: new Date(monthStart).toLocaleDateString("en-US", {
+          month: "short",
+          timeZone: "UTC",
+        }),
+        total: createdTimes.filter((time) => time < monthEnd).length,
+        added: createdTimes.filter(
+          (time) => time >= monthStart && time < monthEnd,
+        ).length,
+      };
     });
 
     const roleCounts = new Map<string, number>();
@@ -124,6 +149,31 @@ export default function UsersOverviewPage() {
         .sort((a, b) => b.value - a.value),
     };
   }, [usersQuery.data, pendingQuery.data, now]);
+
+  const { refetch: refetchUsers } = usersQuery;
+
+  // Real-time updates: re-fetch the full user set every minute so the growth
+  // chart, metrics and distributions track account changes without a manual
+  // reload, and re-fetch whenever the tab becomes visible again.
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+      void refetchUsers();
+    }, AUTO_REFRESH_MS);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setNow(Date.now());
+        void refetchUsers();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refetchUsers]);
 
   const pending = pendingQuery.data?.content ?? [];
 
@@ -209,8 +259,9 @@ export default function UsersOverviewPage() {
       <div className="grid gap-6 xl:grid-cols-3">
         <SectionCard
           title="User growth"
-          description="Total accounts over the last six months, from creation dates."
+          description="Total accounts over the last six months, refreshed live from the API."
           className="xl:col-span-2"
+          action={<LiveBadge />}
         >
           <UserGrowthChart data={growth} isLoading={usersQuery.isLoading} />
         </SectionCard>

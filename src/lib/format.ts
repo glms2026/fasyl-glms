@@ -111,6 +111,31 @@ export function formatTime(value?: string | null): string {
   return withAmPm(timeFormatter.format(date));
 }
 
+function sameDay(a: Date, b: Date): boolean {
+  return a.toDateString() === b.toDateString();
+}
+
+/**
+ * Friendly day label: "Today" / "Yesterday" for recent events, otherwise
+ * the calendar date (e.g. "15 Aug 2026"). Used next to the clock time in
+ * the activity trail.
+ */
+export function formatDayLabel(value?: string | null): string {
+  if (!value) return "—";
+
+  const date = toUtcDate(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const now = new Date();
+  if (sameDay(date, now)) return "Today";
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (sameDay(date, yesterday)) return "Yesterday";
+
+  return formatDate(value);
+}
+
 /** Seconds + timezone precision, for audit detail views. */
 export function formatDateTimeFull(value?: string | null): string {
   if (!value) return "—";
