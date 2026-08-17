@@ -12,6 +12,8 @@ import com.glms.general_ledger_management_system.Repository.AuditLogRepository;
 import com.glms.general_ledger_management_system.Repository.LedgerRepository;
 import com.glms.general_ledger_management_system.Repository.UserRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -60,7 +62,7 @@ public class LedgerService {
         )) {
 
             throw new IllegalArgumentException(
-                    "Ledger code already exists"
+                    "A ledger with this code already exists - please try a different code."
             );
         }
 
@@ -392,7 +394,7 @@ public class LedgerService {
         if (ledger.getStatus() == LedgerStatus.ACTIVE) {
 
             throw new IllegalStateException(
-                    "Ledger is already active"
+                    "This ledger is already active - nothing to do here."
             );
         }
 
@@ -439,7 +441,7 @@ public class LedgerService {
         if (ledger.getStatus() == LedgerStatus.INACTIVE) {
 
             throw new IllegalStateException(
-                    "Ledger is already inactive"
+                    "This ledger is already inactive - nothing to do here."
             );
         }
 
@@ -486,7 +488,7 @@ public class LedgerService {
         if (ledger.getStatus() == LedgerStatus.SUSPENDED) {
 
             throw new IllegalStateException(
-                    "Ledger is already suspended"
+                    "This ledger is already suspended - nothing to do here."
             );
         }
 
@@ -522,7 +524,7 @@ public class LedgerService {
         if (ledgerId == null) {
 
             throw new IllegalArgumentException(
-                    "Ledger ID cannot be null"
+                    "Please provide the ledger ID."
             );
         }
 
@@ -531,8 +533,8 @@ public class LedgerService {
                 .findByIdAndDeletedFalse(ledgerId)
                 .orElseThrow(
                         () ->
-                                new RuntimeException(
-                                        "Ledger not found"
+                                new EntityNotFoundException(
+                                        "We couldn't find that ledger - it may have been deleted."
                                 )
                 );
     }
@@ -560,7 +562,7 @@ public class LedgerService {
         ) {
 
             throw new AccessDeniedException(
-                    "User is not authenticated"
+                    "Your session isn't authenticated - please sign in again."
             );
         }
 
@@ -573,8 +575,8 @@ public class LedgerService {
                 .findByUsername(username)
                 .orElseThrow(
                         () ->
-                                new RuntimeException(
-                                        "Authenticated user not found"
+                                new IllegalStateException(
+                                        "We couldn't find the account tied to your session - please sign in again."
                                 )
                 );
     }
@@ -613,7 +615,7 @@ public class LedgerService {
         ) {
 
             throw new AccessDeniedException(
-                    "You do not have permission to access this ledger"
+                    "You don't have permission to access this ledger - it belongs to another user."
             );
         }
     }
@@ -629,7 +631,7 @@ public class LedgerService {
         if (!isAdmin(user)) {
 
             throw new AccessDeniedException(
-                    "Administrator privileges are required"
+                    "This action requires administrator privileges."
             );
         }
     }

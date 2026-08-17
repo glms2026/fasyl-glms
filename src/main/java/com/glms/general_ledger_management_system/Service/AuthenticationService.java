@@ -59,6 +59,9 @@ public class AuthenticationService {
      * USER LOGIN
      * =========================================================
      */
+    @Transactional(
+            noRollbackFor = BadCredentialsException.class
+    )
     public LoginResponse login(LoginRequest request) {
 
         if (request == null
@@ -66,7 +69,7 @@ public class AuthenticationService {
                 || request.getUsername().isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Username is required"
+                    "Please enter your username to continue."
             );
         }
 
@@ -74,7 +77,7 @@ public class AuthenticationService {
                 || request.getPassword().isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Password is required"
+                    "Please enter your password to continue."
             );
         }
 
@@ -92,7 +95,7 @@ public class AuthenticationService {
                         .orElseThrow(
                                 () ->
                                         new UsernameNotFoundException(
-                                                "Invalid username or password"
+                                                "We couldn't match that username and password. Please double-check your details and try again."
                                         )
                         );
 
@@ -127,7 +130,7 @@ public class AuthenticationService {
             increaseFailedAttempts(user);
 
             throw new BadCredentialsException(
-                    "Invalid username or password"
+                    "We couldn't match that username and password. Please double-check your details and try again."
             );
         }
 
@@ -298,7 +301,7 @@ public class AuthenticationService {
             }
 
             throw new IllegalStateException(
-                    "Account is locked"
+                    "Your account is temporarily locked. It will unlock automatically in a few minutes - please try again shortly."
             );
         }
 
@@ -309,7 +312,7 @@ public class AuthenticationService {
         if (UserStatus.SUSPENDED.equals(status)) {
 
             throw new IllegalStateException(
-                    "Account is suspended"
+                    "Your account has been suspended. Please contact your administrator for assistance."
             );
         }
 
@@ -320,7 +323,7 @@ public class AuthenticationService {
         if (UserStatus.INACTIVE.equals(status)) {
 
             throw new IllegalStateException(
-                    "Account is inactive"
+                    "You haven't been approved yet - your account is waiting for an Authorizer to activate it."
             );
         }
 
@@ -331,7 +334,7 @@ public class AuthenticationService {
         if (UserStatus.PASSWORD_EXPIRED.equals(status)) {
 
             throw new IllegalStateException(
-                    "Password expired. Please change your password"
+                    "Your password has expired - let's get you a new one. Please set a fresh password to continue."
             );
         }
     }
@@ -457,7 +460,7 @@ public class AuthenticationService {
         if (request == null) {
 
             throw new IllegalArgumentException(
-                    "Password change request cannot be null"
+                    "Please provide your password details to continue."
             );
         }
 
@@ -475,7 +478,7 @@ public class AuthenticationService {
                         .orElseThrow(
                                 () ->
                                         new UsernameNotFoundException(
-                                                "User not found"
+                                                "We couldn't find your account - please sign in again and try."
                                         )
                         );
 
@@ -489,7 +492,7 @@ public class AuthenticationService {
         )) {
 
             throw new IllegalArgumentException(
-                    "Old password is incorrect"
+                    "That's not your current password - please double-check and try again."
             );
         }
 
@@ -503,7 +506,7 @@ public class AuthenticationService {
                 )) {
 
             throw new IllegalArgumentException(
-                    "Password confirmation does not match"
+                    "The new password and its confirmation don't match - please re-enter them."
             );
         }
 
@@ -525,7 +528,7 @@ public class AuthenticationService {
         )) {
 
             throw new IllegalArgumentException(
-                    "New password cannot be the same as old password"
+                    "Your new password must be different from your current one - pick something fresh!"
             );
         }
 
@@ -591,7 +594,7 @@ public class AuthenticationService {
                 || request.getEmail().isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Email is required"
+                    "Please enter your email address."
             );
         }
 
@@ -604,7 +607,7 @@ public class AuthenticationService {
                         .orElseThrow(
                                 () ->
                                         new UsernameNotFoundException(
-                                                "Email not found"
+                                                "If that email is registered, you'll receive a password reset link shortly."
                                         )
                         );
 
@@ -656,7 +659,7 @@ public class AuthenticationService {
                 || request.getToken().isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Reset token is required"
+                    "Please provide your password reset token."
             );
         }
 
@@ -669,7 +672,7 @@ public class AuthenticationService {
                         .orElseThrow(
                                 () ->
                                         new IllegalArgumentException(
-                                                "Invalid reset token"
+                                                "This reset link is invalid - please request a new one."
                                         )
                         );
 
@@ -683,7 +686,7 @@ public class AuthenticationService {
                 )) {
 
             throw new IllegalArgumentException(
-                    "Reset token expired"
+                    "This password reset link has expired - please request a new one."
             );
         }
 
@@ -697,7 +700,7 @@ public class AuthenticationService {
                 )) {
 
             throw new IllegalArgumentException(
-                    "Passwords do not match"
+                    "The new password and its confirmation don't match - please re-enter them."
             );
         }
 
@@ -797,35 +800,35 @@ public class AuthenticationService {
                 || newPassword.length() > 100) {
 
             throw new IllegalArgumentException(
-                    "New password must be between 8 and 100 characters"
+                    "Your new password needs to be between 8 and 100 characters."
             );
         }
 
         if (!newPassword.matches(".*[A-Z].*")) {
 
             throw new IllegalArgumentException(
-                    "New password must contain an uppercase letter"
+                    "Add at least one uppercase letter (A-Z) to your new password."
             );
         }
 
         if (!newPassword.matches(".*[a-z].*")) {
 
             throw new IllegalArgumentException(
-                    "New password must contain a lowercase letter"
+                    "Add at least one lowercase letter (a-z) to your new password."
             );
         }
 
         if (!newPassword.matches(".*\\d.*")) {
 
             throw new IllegalArgumentException(
-                    "New password must contain a digit"
+                    "Include at least one number (0-9) in your new password."
             );
         }
 
         if (!newPassword.matches(".*[^A-Za-z0-9].*")) {
 
             throw new IllegalArgumentException(
-                    "New password must contain a special character"
+                    "Include at least one special character (like @, #, or !) in your new password."
             );
         }
     }
@@ -1102,7 +1105,7 @@ public class AuthenticationService {
                 || token.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Access token is required"
+                    "Please provide a valid access token to log out."
             );
         }
 
@@ -1113,7 +1116,7 @@ public class AuthenticationService {
                         .orElseThrow(
                                 () ->
                                         new IllegalArgumentException(
-                                                "Token not found"
+                                                "This session is no longer valid - you may already be logged out."
                                         )
                         );
 

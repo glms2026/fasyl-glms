@@ -81,7 +81,7 @@ public class RefreshTokenService {
                 .findByToken(token)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Refresh token not found"
+                                "Your session has expired - please sign in again."
                         )
                 );
     }
@@ -96,7 +96,7 @@ public class RefreshTokenService {
         if(token == null){
 
             throw new RuntimeException(
-                    "Refresh token not found"
+                    "Your session has expired - please sign in again."
             );
 
         }
@@ -106,7 +106,7 @@ public class RefreshTokenService {
         if(token.isRevoked()){
 
             throw new RuntimeException(
-                    "Refresh token revoked"
+                    "Your session is no longer valid - please sign in again."
             );
 
         }
@@ -126,7 +126,7 @@ public class RefreshTokenService {
 
 
             throw new RuntimeException(
-                    "Refresh token expired"
+                    "Your session has expired - please sign in again."
             );
 
         }

@@ -136,7 +136,7 @@ public class UserApprovalRequestService {
         if (actionType == UserApprovalAction.ASSIGN_ROLE) {
 
             throw new IllegalArgumentException(
-                    "ASSIGN_ROLE requires AssignRoleApprovalRequest"
+                    "Role assignments must be submitted through the dedicated role-assignment form."
             );
         }
 
@@ -260,7 +260,7 @@ public class UserApprovalRequestService {
             throw new IllegalArgumentException(
                     "Lock duration must be between 1 and "
                             + lockMaxMinutes
-                            + " minutes"
+                            + " minutes - please pick a shorter window."
             );
         }
 
@@ -290,7 +290,7 @@ public class UserApprovalRequestService {
         if (userId == null) {
 
             throw new IllegalArgumentException(
-                    "User ID cannot be null"
+                    "Please provide the user ID."
             );
         }
 
@@ -298,7 +298,7 @@ public class UserApprovalRequestService {
         if (roleNames == null || roleNames.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one role must be provided"
+                    "Please select at least one role to continue."
             );
         }
 
@@ -306,7 +306,7 @@ public class UserApprovalRequestService {
         if (reason == null || reason.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Reason is required"
+                    "Please provide a reason for this request."
             );
         }
 
@@ -315,7 +315,7 @@ public class UserApprovalRequestService {
                 userRepository.findById(userId)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "User not found: " + userId
+                                        "We couldn't find the user: " + userId
                                 )
                         );
 
@@ -330,7 +330,7 @@ public class UserApprovalRequestService {
         if (maker.getId().equals(targetUser.getId())) {
 
             throw new AccessDeniedException(
-                    "You cannot create a role assignment request for yourself"
+                    "You can't assign roles to yourself through this workflow - please ask a colleague to handle it."
             );
         }
 
@@ -342,7 +342,7 @@ public class UserApprovalRequestService {
         if (isAdmin(targetUser)) {
 
             throw new AccessDeniedException(
-                    "Administrator account cannot be modified through the approval workflow"
+                    "Administrator accounts are protected and can't be changed through the approval workflow."
             );
         }
 
@@ -361,7 +361,7 @@ public class UserApprovalRequestService {
         if (cleanedRoleNames.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "No valid roles were provided"
+                    "None of the roles you selected are valid - please check and try again."
             );
         }
 
@@ -375,7 +375,7 @@ public class UserApprovalRequestService {
                     .findByNameIgnoreCase(roleName)
                     .orElseThrow(() ->
                             new IllegalArgumentException(
-                                    "Role not found: " + roleName
+                                    "We couldn't find the role: " + roleName
                             )
                     );
         }
@@ -397,7 +397,7 @@ public class UserApprovalRequestService {
         if (pending) {
 
             throw new IllegalStateException(
-                    "A pending role assignment request already exists for this user"
+                    "This user already has a pending role-assignment request - please wait for it to be resolved first."
             );
         }
 
@@ -469,7 +469,7 @@ public class UserApprovalRequestService {
 
         if (roleId == null) {
             throw new IllegalArgumentException(
-                    "Role ID cannot be null"
+                    "Please provide the role ID."
             );
         }
 
@@ -477,7 +477,7 @@ public class UserApprovalRequestService {
                 || permissionNames.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one permission must be provided"
+                    "Please select at least one permission to continue."
             );
         }
 
@@ -489,7 +489,7 @@ public class UserApprovalRequestService {
                 roleRepository.findById(roleId)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Role not found: " + roleId
+                                        "We couldn't find the role: " + roleId
                                 )
                         );
 
@@ -500,7 +500,7 @@ public class UserApprovalRequestService {
         if ("ADMIN".equalsIgnoreCase(role.getName())) {
 
             throw new AccessDeniedException(
-                    "ADMIN role permissions cannot be modified through this workflow"
+                    "The ADMIN role's permissions are protected and can't be changed through the approval workflow."
             );
         }
 
@@ -517,7 +517,7 @@ public class UserApprovalRequestService {
         if (cleanedPermissionNames.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "No valid permissions were provided"
+                    "None of the permissions you selected are valid - please check and try again."
             );
         }
 
@@ -530,7 +530,7 @@ public class UserApprovalRequestService {
                     .findByNameIgnoreCase(permissionName)
                     .orElseThrow(() ->
                             new IllegalArgumentException(
-                                    "Permission not found: "
+                                    "We couldn't find the permission: "
                                             + permissionName
                             )
                     );
@@ -546,7 +546,7 @@ public class UserApprovalRequestService {
         )) {
 
             throw new IllegalStateException(
-                    "A pending permission assignment request already exists for role "
+                    "There's already a pending permission request for the "
                             + role.getName()
             );
         }
@@ -624,7 +624,7 @@ public class UserApprovalRequestService {
         if (roleId == null) {
 
             throw new IllegalArgumentException(
-                    "Role ID cannot be null"
+                    "Please provide the role ID."
             );
         }
 
@@ -632,7 +632,7 @@ public class UserApprovalRequestService {
                 || permissionName.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Permission name is required"
+                    "Please provide the permission name."
             );
         }
 
@@ -645,7 +645,7 @@ public class UserApprovalRequestService {
                 roleRepository.findById(roleId)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Role not found: "
+                                        "We couldn't find the role: "
                                                 + roleId
                                 )
                         );
@@ -656,7 +656,7 @@ public class UserApprovalRequestService {
         if ("ADMIN".equalsIgnoreCase(role.getName())) {
 
             throw new AccessDeniedException(
-                    "ADMIN role permissions cannot be modified through this workflow"
+                    "The ADMIN role's permissions are protected and can't be changed through the approval workflow."
             );
         }
 
@@ -667,7 +667,7 @@ public class UserApprovalRequestService {
                         )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Permission not found: "
+                                        "We couldn't find the permission: "
                                                 + permissionName
                                 )
                         );
@@ -681,9 +681,9 @@ public class UserApprovalRequestService {
                 .contains(permission)) {
 
             throw new IllegalStateException(
-                    "Permission "
+                    "The permission '"
                             + permissionName
-                            + " is not assigned to role "
+                            + "' isn't currently assigned to the "
                             + role.getName()
             );
         }
@@ -711,7 +711,7 @@ public class UserApprovalRequestService {
         )) {
 
             throw new IllegalStateException(
-                    "A pending permission removal request already exists for role "
+                    "There's already a pending permission-removal request for the "
                             + role.getName()
             );
         }
@@ -812,7 +812,7 @@ public class UserApprovalRequestService {
                     || request.getRoles().isEmpty()) {
 
                 throw new IllegalStateException(
-                        "Approval request has no target role"
+                        "This request doesn't specify a target role - please create it again."
                 );
             }
 
@@ -871,7 +871,7 @@ public class UserApprovalRequestService {
         if (targetUser == null) {
 
             throw new IllegalStateException(
-                    "Approval request has no target user"
+                    "This request doesn't specify a target user - please create it again."
             );
         }
 
@@ -982,7 +982,7 @@ public class UserApprovalRequestService {
         if (user == null) {
 
             throw new IllegalStateException(
-                    "Approval request has no target user"
+                    "This request doesn't specify a target user - please create it again."
             );
         }
 
@@ -994,7 +994,7 @@ public class UserApprovalRequestService {
                 != UserStatus.INACTIVE) {
 
             throw new IllegalStateException(
-                    "User creation cannot be approved because the account is no longer inactive"
+                    "This account is no longer awaiting activation, so the creation request can't be approved anymore."
             );
         }
 
@@ -1006,7 +1006,7 @@ public class UserApprovalRequestService {
         if (isAdmin(user)) {
 
             throw new AccessDeniedException(
-                    "Administrator account cannot be created through this workflow"
+                    "Administrator accounts can't be created through the approval workflow."
             );
         }
 
@@ -1091,7 +1091,7 @@ public class UserApprovalRequestService {
                 || roleNames.isEmpty()) {
 
             throw new IllegalStateException(
-                    "No roles were supplied for user creation"
+                    "The creation request didn't include any roles - please create it again."
             );
         }
 
@@ -1113,7 +1113,7 @@ public class UserApprovalRequestService {
                                         )
                                         .orElseThrow(() ->
                                                 new IllegalArgumentException(
-                                                        "Role no longer exists: "
+                                                        "This role no longer exists: "
                                                                 + roleName
                                                 )
                                         )
@@ -1139,7 +1139,7 @@ public class UserApprovalRequestService {
                 || permissionNames.isEmpty()) {
 
             throw new IllegalStateException(
-                    "No permissions were supplied for user creation"
+                    "The creation request didn't include any permissions - please create it again."
             );
         }
 
@@ -1161,7 +1161,7 @@ public class UserApprovalRequestService {
                                         )
                                         .orElseThrow(() ->
                                                 new IllegalArgumentException(
-                                                        "Permission no longer exists: "
+                                                        "This permission no longer exists: "
                                                                 + permissionName
                                                 )
                                         )
@@ -1233,9 +1233,9 @@ public class UserApprovalRequestService {
             )) {
 
                 throw new IllegalArgumentException(
-                        "Permission "
+                        "The permission '"
                                 + permissionName
-                                + " is not assigned to the selected role(s)"
+                                + "' isn't available on the selected roles"
                 );
             }
         }
@@ -1259,7 +1259,7 @@ public class UserApprovalRequestService {
                 || remark.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Rejection remark is required"
+                    "Please add a remark explaining why you're rejecting this request."
             );
         }
 
@@ -1413,7 +1413,7 @@ public class UserApprovalRequestService {
                 .equals(maker.getId()))) {
 
             throw new AccessDeniedException(
-                    "Only the maker or an administrator can cancel this request"
+                    "Only the person who created this request (or an administrator) can cancel it."
             );
         }
 
@@ -1467,7 +1467,7 @@ public class UserApprovalRequestService {
         if (action == null) {
 
             throw new IllegalStateException(
-                    "Approval request has no action"
+                    "This request doesn't specify an action - please create it again."
             );
         }
 
@@ -1486,7 +1486,7 @@ public class UserApprovalRequestService {
                 && !isPermissionAction) {
 
             throw new IllegalStateException(
-                    "Approval request has no target user"
+                    "This request doesn't specify a target user - please create it again."
             );
         }
 
@@ -1505,7 +1505,7 @@ public class UserApprovalRequestService {
                         == UserStatus.ACTIVE) {
 
                     throw new IllegalStateException(
-                            "User account is already active"
+                            "Good news - this account is already active, so there's nothing to do."
                     );
                 }
 
@@ -1514,7 +1514,7 @@ public class UserApprovalRequestService {
                         == UserStatus.LOCKED) {
 
                     throw new IllegalStateException(
-                            "Locked account must be unlocked before activation"
+                            "This account is locked right now - it needs to be unlocked before it can be activated."
                     );
                 }
 
@@ -1523,7 +1523,7 @@ public class UserApprovalRequestService {
                         == UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "Suspended account must be unsuspended before activation"
+                            "This account is suspended - it needs to be unsuspended before it can be activated."
                     );
                 }
 
@@ -1552,7 +1552,7 @@ public class UserApprovalRequestService {
                         == UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "User account is already inactive"
+                            "This account is already inactive - nothing to do here."
                     );
                 }
 
@@ -1589,7 +1589,7 @@ public class UserApprovalRequestService {
                         == UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "User account is already suspended"
+                            "This account is already suspended - nothing to do here."
                     );
                 }
 
@@ -1598,7 +1598,7 @@ public class UserApprovalRequestService {
                         == UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "Inactive account cannot be suspended"
+                            "Inactive accounts can't be suspended - please activate it first."
                     );
                 }
 
@@ -1607,7 +1607,7 @@ public class UserApprovalRequestService {
                         == UserStatus.LOCKED) {
 
                     throw new IllegalStateException(
-                            "Locked account must be unlocked before suspension"
+                            "This account is locked - it needs to be unlocked before it can be suspended."
                     );
                 }
 
@@ -1653,7 +1653,7 @@ public class UserApprovalRequestService {
                         != UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "User account is not suspended"
+                            "This account isn't suspended, so there's nothing to unsuspend."
                     );
                 }
 
@@ -1693,7 +1693,7 @@ public class UserApprovalRequestService {
                         == UserStatus.LOCKED) {
 
                     throw new IllegalStateException(
-                            "User account is already locked"
+                            "This account is already locked - nothing to do here."
                     );
                 }
 
@@ -1702,7 +1702,7 @@ public class UserApprovalRequestService {
                         == UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "Inactive account cannot be locked"
+                            "Inactive accounts can't be locked - please activate it first."
                     );
                 }
 
@@ -1711,7 +1711,7 @@ public class UserApprovalRequestService {
                         == UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "Suspended account cannot be locked"
+                            "Suspended accounts can't be locked - please unsuspend it first."
                     );
                 }
 
@@ -1839,7 +1839,7 @@ public class UserApprovalRequestService {
                 if (user.getStatus() != UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "User must be inactive before creation approval"
+                            "This account is no longer awaiting activation, so the creation approval can't proceed."
                     );
                 }
 
@@ -1883,7 +1883,7 @@ public class UserApprovalRequestService {
              * PASSWORD_RESET intentionally ends up here.
              */
             default -> throw new IllegalArgumentException(
-                    "Unsupported approval action: "
+                    "This approval action isn't supported: "
                             + action
             );
         }
@@ -1917,7 +1917,7 @@ public class UserApprovalRequestService {
                 || request.getPermissions().isEmpty()) {
 
             throw new IllegalStateException(
-                    "No permissions were supplied"
+                    "The request didn't include any permissions - please create it again."
             );
         }
 
@@ -1927,7 +1927,7 @@ public class UserApprovalRequestService {
         if (request.getRoles() == null) {
 
             throw new IllegalStateException(
-                    "Approval request has no target role"
+                    "This request doesn't specify a target role - please create it again."
             );
         }
 
@@ -1942,14 +1942,14 @@ public class UserApprovalRequestService {
                         .findByNameIgnoreCase(roleName)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Role not found: " + roleName
+                                        "We couldn't find the role: " + roleName
                                 )
                         );
 
         if ("ADMIN".equalsIgnoreCase(role.getName())) {
 
             throw new AccessDeniedException(
-                    "ADMIN role cannot be modified through this workflow"
+                    "The ADMIN role's permissions are protected and can't be changed through the approval workflow."
             );
         }
 
@@ -1975,7 +1975,7 @@ public class UserApprovalRequestService {
                                                 )
                                                 .orElseThrow(() ->
                                                         new IllegalArgumentException(
-                                                                "Permission not found: "
+                                                                "We couldn't find the permission: "
                                                                         + name
                                                         )
                                                 )
@@ -2016,14 +2016,14 @@ public class UserApprovalRequestService {
                 || request.getPermissions().size() != 1) {
 
             throw new IllegalStateException(
-                    "Exactly one permission must be supplied for removal"
+                    "Please choose exactly one permission to remove."
             );
         }
 
         if (request.getRoles() == null) {
 
             throw new IllegalStateException(
-                    "Approval request has no target role"
+                    "This request doesn't specify a target role - please create it again."
             );
         }
 
@@ -2042,14 +2042,14 @@ public class UserApprovalRequestService {
                         .findByNameIgnoreCase(roleName)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Role not found: " + roleName
+                                        "We couldn't find the role: " + roleName
                                 )
                         );
 
         if ("ADMIN".equalsIgnoreCase(role.getName())) {
 
             throw new AccessDeniedException(
-                    "ADMIN role cannot be modified through this workflow"
+                    "The ADMIN role's permissions are protected and can't be changed through the approval workflow."
             );
         }
 
@@ -2060,16 +2060,16 @@ public class UserApprovalRequestService {
                         )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Permission not found: "
+                                        "We couldn't find the permission: "
                                                 + permissionName
                                 )
                         );
 
         if (!role.getPermissions().contains(permission)) {
             throw new IllegalStateException(
-                    "Permission "
+                    "The permission '"
                             + permissionName
-                            + " is not assigned to role "
+                            + "' isn't currently assigned to the "
                             + roleName
             );
         }
@@ -2114,7 +2114,7 @@ public class UserApprovalRequestService {
                 || request.getRoles().isEmpty()) {
 
             throw new IllegalStateException(
-                    "No roles were supplied for role assignment"
+                    "The request didn't include any roles - please create it again."
             );
         }
 
@@ -2135,7 +2135,7 @@ public class UserApprovalRequestService {
                                                 )
                                                 .orElseThrow(() ->
                                                         new IllegalArgumentException(
-                                                                "Role not found: "
+                                                                "We couldn't find the role: "
                                                                         + roleName
                                                         )
                                                 )
@@ -2148,7 +2148,7 @@ public class UserApprovalRequestService {
         if (roles.isEmpty()) {
 
             throw new IllegalStateException(
-                    "No valid roles were supplied for role assignment"
+                    "None of the roles in the request are valid - please create it again."
             );
         }
 
@@ -2199,7 +2199,7 @@ public class UserApprovalRequestService {
                 || requestedRoleNames.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one role must be provided"
+                    "Please select at least one role to continue."
             );
         }
 
@@ -2220,7 +2220,7 @@ public class UserApprovalRequestService {
                                     )
                                     .orElseThrow(() ->
                                             new IllegalArgumentException(
-                                                    "Role not found: "
+                                                    "We couldn't find the role: "
                                                             + roleName
                                             )
                                     );
@@ -2250,7 +2250,7 @@ public class UserApprovalRequestService {
         if (actionType == null) {
 
             throw new IllegalArgumentException(
-                    "Approval action is required"
+                    "Please specify the approval action."
             );
         }
 
@@ -2259,7 +2259,7 @@ public class UserApprovalRequestService {
                 .equalsIgnoreCase("PASSWORD_RESET")) {
 
             throw new IllegalArgumentException(
-                    "PASSWORD_RESET is not supported by the user approval workflow"
+                    "Password resets don't go through the approval workflow - please use the password reset flow instead."
             );
         }
 
@@ -2282,7 +2282,7 @@ public class UserApprovalRequestService {
         if (!supported) {
 
             throw new IllegalArgumentException(
-                    "Unsupported approval action: "
+                    "This approval action isn't supported: "
                             + actionType
             );
         }
@@ -2305,7 +2305,7 @@ public class UserApprovalRequestService {
         if (user == null) {
 
             throw new IllegalArgumentException(
-                    "User cannot be null"
+                    "Please provide a valid user account."
             );
         }
 
@@ -2313,7 +2313,7 @@ public class UserApprovalRequestService {
         if (actionType == null) {
 
             throw new IllegalArgumentException(
-                    "Approval action cannot be null"
+                    "Please specify the approval action."
             );
         }
 
@@ -2326,7 +2326,7 @@ public class UserApprovalRequestService {
                         == UserStatus.ACTIVE) {
 
                     throw new IllegalStateException(
-                            "User account is already active"
+                            "Good news - this account is already active, so there's nothing to do."
                     );
                 }
 
@@ -2335,7 +2335,7 @@ public class UserApprovalRequestService {
                         == UserStatus.LOCKED) {
 
                     throw new IllegalStateException(
-                            "Locked account must be unlocked before activation"
+                            "This account is locked right now - it needs to be unlocked before it can be activated."
                     );
                 }
 
@@ -2344,7 +2344,7 @@ public class UserApprovalRequestService {
                         == UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "Suspended account must be unsuspended before activation"
+                            "This account is suspended - it needs to be unsuspended before it can be activated."
                     );
                 }
             }
@@ -2354,7 +2354,7 @@ public class UserApprovalRequestService {
 
                 if (user.getStatus() != UserStatus.INACTIVE) {
                     throw new IllegalStateException(
-                            "User creation request is no longer pending"
+                            "This creation request is no longer pending - it may have already been processed."
                     );
                 }
             }
@@ -2366,7 +2366,7 @@ public class UserApprovalRequestService {
                         == UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "User account is already inactive"
+                            "This account is already inactive - nothing to do here."
                     );
                 }
             }
@@ -2378,7 +2378,7 @@ public class UserApprovalRequestService {
                         == UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "User account is already suspended"
+                            "This account is already suspended - nothing to do here."
                     );
                 }
 
@@ -2387,7 +2387,7 @@ public class UserApprovalRequestService {
                         == UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "Inactive account cannot be suspended"
+                            "Inactive accounts can't be suspended - please activate it first."
                     );
                 }
 
@@ -2396,7 +2396,7 @@ public class UserApprovalRequestService {
                         == UserStatus.LOCKED) {
 
                     throw new IllegalStateException(
-                            "Locked account must be unlocked before suspension"
+                            "This account is locked - it needs to be unlocked before it can be suspended."
                     );
                 }
             }
@@ -2408,7 +2408,7 @@ public class UserApprovalRequestService {
                         != UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "User account is not suspended"
+                            "This account isn't suspended, so there's nothing to unsuspend."
                     );
                 }
             }
@@ -2420,7 +2420,7 @@ public class UserApprovalRequestService {
                         == UserStatus.LOCKED) {
 
                     throw new IllegalStateException(
-                            "User account is already locked"
+                            "This account is already locked - nothing to do here."
                     );
                 }
 
@@ -2429,7 +2429,7 @@ public class UserApprovalRequestService {
                         == UserStatus.INACTIVE) {
 
                     throw new IllegalStateException(
-                            "Inactive account cannot be locked"
+                            "Inactive accounts can't be locked - please activate it first."
                     );
                 }
 
@@ -2438,7 +2438,7 @@ public class UserApprovalRequestService {
                         == UserStatus.SUSPENDED) {
 
                     throw new IllegalStateException(
-                            "Suspended account cannot be locked"
+                            "Suspended accounts can't be locked - please unsuspend it first."
                     );
                 }
             }
@@ -2453,7 +2453,7 @@ public class UserApprovalRequestService {
 
 
             default -> throw new IllegalArgumentException(
-                    "Unsupported approval action: "
+                    "This approval action isn't supported: "
                             + actionType
             );
         }
@@ -2509,7 +2509,7 @@ public class UserApprovalRequestService {
                 || request.getPayloadJson().isBlank()) {
 
             throw new IllegalStateException(
-                    "Approval request has no update payload"
+                    "This update request has no details to apply - please create it again."
             );
         }
 
@@ -2527,7 +2527,7 @@ public class UserApprovalRequestService {
         } catch (JsonProcessingException exception) {
 
             throw new IllegalStateException(
-                    "Unable to parse update payload",
+                    "We couldn't read the update details - please create the request again.",
                     exception
             );
         }
@@ -2536,7 +2536,7 @@ public class UserApprovalRequestService {
         if (updateRequest == null) {
 
             throw new IllegalStateException(
-                    "Invalid update payload"
+                    "The update details in this request are invalid - please create it again."
             );
         }
 
@@ -2564,7 +2564,7 @@ public class UserApprovalRequestService {
                     .ifPresent(
                             existing -> {
                                 throw new IllegalArgumentException(
-                                        "Username already exists"
+                                        "That username is already taken - please try a different one."
                                 );
                             }
                     );
@@ -2590,7 +2590,7 @@ public class UserApprovalRequestService {
                     .ifPresent(
                             existing -> {
                                 throw new IllegalArgumentException(
-                                        "Email already exists"
+                                        "That email is already registered to another account."
                                 );
                             }
                     );
@@ -2604,7 +2604,7 @@ public class UserApprovalRequestService {
                 && updateRequest.getStatus() != user.getStatus()) {
 
             throw new IllegalStateException(
-                    "Account status cannot be changed through an update request"
+                    "Account status can't be changed through a profile update - please use the dedicated action instead."
             );
         }
 
@@ -2664,7 +2664,7 @@ public class UserApprovalRequestService {
         if (pending) {
 
             throw new IllegalStateException(
-                    "A pending approval request already exists for this user and action"
+                    "There's already a pending request for this action on this user - please wait for it to be resolved first."
             );
         }
     }
@@ -2684,7 +2684,7 @@ public class UserApprovalRequestService {
                 || targetUser == null) {
 
             throw new IllegalArgumentException(
-                    "Maker and target user are required"
+                    "Both the maker and the target user are required for this request."
             );
         }
 
@@ -2693,7 +2693,7 @@ public class UserApprovalRequestService {
                 .equals(targetUser.getId())) {
 
             throw new AccessDeniedException(
-                    "You cannot create an approval request for yourself"
+                    "You can't create an approval request for yourself - please ask a colleague to handle it."
             );
         }
     }
@@ -2716,7 +2716,7 @@ public class UserApprovalRequestService {
                 .equals(authorizer.getId())) {
 
             throw new AccessDeniedException(
-                    "The maker cannot authorize their own request"
+                    "The person who created this request can't approve it - it needs a second pair of eyes."
             );
         }
     }
@@ -2734,7 +2734,7 @@ public class UserApprovalRequestService {
         if (user == null) {
 
             throw new IllegalArgumentException(
-                    "User cannot be null"
+                    "Please provide a valid user account."
             );
         }
 
@@ -2835,7 +2835,7 @@ public class UserApprovalRequestService {
                 .findById(userId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "User not found: "
+                                "We couldn't find the user: "
                                         + userId
                         )
                 );
@@ -2855,7 +2855,7 @@ public class UserApprovalRequestService {
         if (requestId == null) {
 
             throw new IllegalArgumentException(
-                    "Approval request ID cannot be null"
+                    "Please provide the approval request ID."
             );
         }
 
@@ -2867,7 +2867,7 @@ public class UserApprovalRequestService {
                 )
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Approval request not found or has already been processed"
+                                "We couldn't find a pending request with that ID - it may have already been processed."
                         )
                 );
     }
@@ -2890,7 +2890,7 @@ public class UserApprovalRequestService {
                 || !authentication.isAuthenticated()) {
 
             throw new AccessDeniedException(
-                    "User is not authenticated"
+                    "Your session isn't authenticated - please sign in again."
             );
         }
 
@@ -2903,7 +2903,7 @@ public class UserApprovalRequestService {
                 || username.isBlank()) {
 
             throw new AccessDeniedException(
-                    "Authenticated username is unavailable"
+                    "We couldn't identify your session - please sign in again."
             );
         }
 
@@ -2912,7 +2912,7 @@ public class UserApprovalRequestService {
                 .findByUsername(username)
                 .orElseThrow(() ->
                         new IllegalStateException(
-                                "Authenticated user not found"
+                                "We couldn't find the account tied to your session - please sign in again."
                         )
                 );
     }
@@ -2930,7 +2930,7 @@ public class UserApprovalRequestService {
         if (userId == null) {
 
             throw new IllegalArgumentException(
-                    "User ID cannot be null"
+                    "Please provide the user ID."
             );
         }
     }
@@ -2949,7 +2949,7 @@ public class UserApprovalRequestService {
                 || reason.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Reason is required"
+                    "Please provide a reason for this request."
             );
         }
 
@@ -2957,7 +2957,7 @@ public class UserApprovalRequestService {
         if (reason.trim().length() > 1000) {
 
             throw new IllegalArgumentException(
-                    "Reason cannot exceed 1000 characters"
+                    "Please keep the reason under 1000 characters."
             );
         }
     }
@@ -2986,7 +2986,7 @@ public class UserApprovalRequestService {
         if (normalized.length() > 1000) {
 
             throw new IllegalArgumentException(
-                    "Authorizer remark cannot exceed 1000 characters"
+                    "Please keep your remark under 1000 characters."
             );
         }
 

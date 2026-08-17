@@ -118,7 +118,7 @@ public class UserService {
          */
         if (request == null) {
             throw new IllegalArgumentException(
-                    "Create user request cannot be null"
+                    "Please provide the new user's details."
             );
         }
 
@@ -152,7 +152,7 @@ public class UserService {
                 || request.getPassword().isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Password is required"
+                    "Please set a password for the new user."
             );
         }
 
@@ -166,7 +166,7 @@ public class UserService {
                 || request.getRoles().isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one role must be assigned"
+                    "Please assign at least one role to the new user."
             );
         }
 
@@ -183,7 +183,7 @@ public class UserService {
                 || request.getPermissions().isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one permission must be assigned"
+                    "Please assign at least one permission to the new user."
             );
         }
 
@@ -208,7 +208,7 @@ public class UserService {
                 )) {
 
             throw new AccessDeniedException(
-                    "You cannot create an account using your own username"
+                    "You can't create an account with your own username - try a different one."
             );
         }
 
@@ -227,7 +227,7 @@ public class UserService {
         if (roles.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "No valid roles were supplied"
+                    "None of the roles you selected are valid - please check and try again."
             );
         }
 
@@ -246,7 +246,7 @@ public class UserService {
         if (requestedPermissions.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "No valid permissions were supplied"
+                    "None of the permissions you selected are valid - please check and try again."
             );
         }
 
@@ -485,7 +485,7 @@ public class UserService {
         if (request == null) {
 
             throw new IllegalArgumentException(
-                    "Update user request cannot be null"
+                    "Please provide the updated details for this user."
             );
         }
 
@@ -533,7 +533,7 @@ public class UserService {
         if (maker.getId().equals(user.getId())) {
 
             throw new AccessDeniedException(
-                    "You cannot create an update request for yourself"
+                    "You can't update your own account through this workflow - please ask a colleague to review it for you."
             );
         }
 
@@ -552,7 +552,7 @@ public class UserService {
         if (pending) {
 
             throw new IllegalStateException(
-                    "A pending update request already exists for this user"
+                    "This user already has a pending update request - please wait for it to be resolved first."
             );
         }
 
@@ -572,7 +572,7 @@ public class UserService {
         } catch (JsonProcessingException exception) {
 
             throw new IllegalArgumentException(
-                    "Unable to serialize update request",
+                    "We couldn't process the update details - please try again.",
                     exception
             );
         }
@@ -648,7 +648,7 @@ public class UserService {
 
         if (pageable == null) {
             throw new IllegalArgumentException(
-                    "Page information cannot be null"
+                    "Please provide valid pagination information."
             );
         }
 
@@ -678,7 +678,7 @@ public class UserService {
                 == UserStatus.INACTIVE) {
 
             throw new IllegalStateException(
-                    "User account is already inactive"
+                    "This account is already inactive - nothing to do here."
             );
         }
 
@@ -730,7 +730,7 @@ public class UserService {
                 == UserStatus.ACTIVE) {
 
             throw new IllegalStateException(
-                    "User account is already active"
+                    "Good news - this account is already active, so there's nothing to do."
             );
         }
 
@@ -738,7 +738,7 @@ public class UserService {
                 == UserStatus.LOCKED) {
 
             throw new IllegalStateException(
-                    "Locked account must be unlocked before activation"
+                    "This account is locked right now - it needs to be unlocked before it can be activated."
             );
         }
 
@@ -746,7 +746,7 @@ public class UserService {
                 == UserStatus.SUSPENDED) {
 
             throw new IllegalStateException(
-                    "Suspended account must be unsuspended first"
+                    "This account is suspended - it needs to be unsuspended before it can be activated."
             );
         }
 
@@ -787,7 +787,7 @@ public class UserService {
                 == UserStatus.INACTIVE) {
 
             throw new IllegalStateException(
-                    "User account is already inactive"
+                    "This account is already inactive - nothing to do here."
             );
         }
 
@@ -843,7 +843,7 @@ public class UserService {
                 || request.getRoles().isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one role is required"
+                    "Please select at least one role to continue."
             );
         }
 
@@ -897,7 +897,7 @@ public class UserService {
                 == UserStatus.SUSPENDED) {
 
             throw new IllegalStateException(
-                    "User account is already suspended"
+                    "This account is already suspended - nothing to do here."
             );
         }
 
@@ -905,7 +905,7 @@ public class UserService {
                 == UserStatus.INACTIVE) {
 
             throw new IllegalStateException(
-                    "Inactive account cannot be suspended"
+                    "Inactive accounts can't be suspended - please activate it first."
             );
         }
 
@@ -913,7 +913,7 @@ public class UserService {
                 == UserStatus.LOCKED) {
 
             throw new IllegalStateException(
-                    "Locked account must be unlocked before suspension"
+                    "This account is locked - it needs to be unlocked before it can be suspended."
             );
         }
 
@@ -967,7 +967,7 @@ public class UserService {
                 != UserStatus.SUSPENDED) {
 
             throw new IllegalStateException(
-                    "User account is not suspended"
+                    "This account isn't suspended, so there's nothing to unsuspend."
             );
         }
 
@@ -1066,6 +1066,24 @@ public class UserService {
                     .atZone(ZoneId.systemDefault());
         }
 
+        /*
+         * Defensive fallback for locks that carry no explicit
+         * timestamp (legacy or edge states): fall back to when the
+         * row was last updated or created, so an account can never
+         * be stuck locked forever.
+         */
+        if (user.getUpdatedAt() != null) {
+
+            return user.getUpdatedAt()
+                    .atZone(ZoneId.systemDefault());
+        }
+
+        if (user.getCreatedAt() != null) {
+
+            return user.getCreatedAt()
+                    .atZone(ZoneId.systemDefault());
+        }
+
         return null;
     }
 
@@ -1159,7 +1177,7 @@ public class UserService {
                                 )
                                 .orElseThrow(() ->
                                         new IllegalArgumentException(
-                                                "Role not found: "
+                                                "We couldn't find the role: "
                                                         + roleName
                                         )
                                 )
@@ -1182,7 +1200,7 @@ public class UserService {
                 || permissionNames.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one permission is required"
+                    "Please select at least one permission to continue."
             );
         }
 
@@ -1200,7 +1218,7 @@ public class UserService {
                                 )
                                 .orElseThrow(() ->
                                         new IllegalArgumentException(
-                                                "Permission not found: "
+                                                "We couldn't find the permission: "
                                                         + permissionName
                                         )
                                 )
@@ -1212,7 +1230,7 @@ public class UserService {
         if (permissions.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one valid permission is required"
+                    "Please select at least one valid permission to continue."
             );
         }
 
@@ -1288,7 +1306,7 @@ public class UserService {
         if (roles == null || roles.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one role is required"
+                    "Please select at least one role to continue."
             );
         }
 
@@ -1301,7 +1319,7 @@ public class UserService {
                 || requestedPermissions.isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one permission is required"
+                    "Please select at least one permission to continue."
             );
         }
 
@@ -1341,7 +1359,7 @@ public class UserService {
                     || requestedPermission.getName().isBlank()) {
 
                 throw new IllegalArgumentException(
-                        "Invalid permission supplied"
+                        "One of the permissions you provided isn't valid - please check and try again."
                 );
             }
 
@@ -1360,9 +1378,9 @@ public class UserService {
             )) {
 
                 throw new IllegalArgumentException(
-                        "Permission "
+                        "The permission '"
                                 + permissionName
-                                + " is not assigned to any of the selected roles"
+                                + "' isn't available on any of the selected roles"
                 );
             }
         }
@@ -1382,7 +1400,7 @@ public class UserService {
                 || username.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Username is required"
+                    "Please enter a username for this user."
             );
         }
 
@@ -1391,7 +1409,7 @@ public class UserService {
                 .isPresent()) {
 
             throw new IllegalArgumentException(
-                    "Username already exists"
+                    "That username is already taken - please try a different one."
             );
         }
     }
@@ -1410,7 +1428,7 @@ public class UserService {
                 || email.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Email is required"
+                    "Please enter an email address for this user."
             );
         }
 
@@ -1419,7 +1437,7 @@ public class UserService {
                 .isPresent()) {
 
             throw new IllegalArgumentException(
-                    "Email already exists"
+                    "That email is already registered to another account."
             );
         }
     }
@@ -1437,7 +1455,7 @@ public class UserService {
         if (id == null) {
 
             throw new IllegalArgumentException(
-                    "User ID cannot be null"
+                    "Please provide the user ID."
             );
         }
 
@@ -1445,7 +1463,7 @@ public class UserService {
                 .findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "User not found: " + id
+                                "We couldn't find the user: " + id
                         )
                 );
     }
@@ -1482,7 +1500,7 @@ public class UserService {
         if (isAdmin) {
 
             throw new AccessDeniedException(
-                    "Administrator account cannot be modified by this operation"
+                    "Administrator accounts are protected and can't be modified through this operation."
             );
         }
     }
@@ -1534,7 +1552,7 @@ public class UserService {
                 || !authentication.isAuthenticated()) {
 
             throw new AccessDeniedException(
-                    "User is not authenticated"
+                    "Your session isn't authenticated - please sign in again."
             );
         }
 
@@ -1553,7 +1571,7 @@ public class UserService {
                 || !authentication.isAuthenticated()) {
 
             throw new AccessDeniedException(
-                    "User is not authenticated"
+                    "Your session isn't authenticated - please sign in again."
             );
         }
 
@@ -1564,7 +1582,7 @@ public class UserService {
                 || username.isBlank()) {
 
             throw new AccessDeniedException(
-                    "Authenticated username is unavailable"
+                    "We couldn't identify your session - please sign in again."
             );
         }
 
@@ -1572,7 +1590,7 @@ public class UserService {
                 .findByUsername(username)
                 .orElseThrow(() ->
                         new IllegalStateException(
-                                "Authenticated user not found"
+                                "We couldn't find the account tied to your session - please sign in again."
                         )
                 );
     }

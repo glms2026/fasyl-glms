@@ -259,7 +259,7 @@ public class UserApprovalRequestController {
         if (remark == null || remark.isBlank()) {
 
             throw new IllegalArgumentException(
-                    "Rejection remark is required"
+                    "Please add a remark explaining why you're rejecting this request."
             );
         }
 

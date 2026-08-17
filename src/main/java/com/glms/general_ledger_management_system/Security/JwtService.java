@@ -166,7 +166,7 @@ public class JwtService {
 
 
             throw new RuntimeException(
-                    "Invalid JWT Token"
+                    "Your session token is invalid - please sign in again."
             );
 
         }

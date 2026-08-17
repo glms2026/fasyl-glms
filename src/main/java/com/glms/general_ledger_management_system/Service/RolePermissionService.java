@@ -45,15 +45,15 @@ public class RolePermissionService {
                 request.getPermissions().isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "At least one permission must be provided"
+                    "Please select at least one permission to continue."
             );
         }
 
         Role role =
                 roleRepository.findById(roleId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Role not found"
+                                new EntityNotFoundException(
+                                        "We couldn't find that role - please check and try again."
                                 ));
 
         Set<Permission> permissions =
@@ -63,7 +63,7 @@ public class RolePermissionService {
                                 permissionRepository
                                         .findByName(permissionName)
                                         .orElseThrow(() ->
-                                                new RuntimeException(
+                                                new EntityNotFoundException(
                                                         "Permission not found: "
                                                                 + permissionName
                                                 )
@@ -100,8 +100,8 @@ public class RolePermissionService {
         Role role =
                 roleRepository.findById(roleId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Role not found"
+                                new EntityNotFoundException(
+                                        "We couldn't find that role - please check and try again."
                                 ));
 
         role.getPermissions().clear();
@@ -123,19 +123,19 @@ public class RolePermissionService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() ->
                         new EntityNotFoundException(
-                                "Role not found with id: " + roleId
+                                "We couldn't find the role: " + roleId
                         ));
 
         Permission permission = permissionRepository.findByNameIgnoreCase(permissionName)
                 .orElseThrow(() ->
                         new EntityNotFoundException(
-                                "Permission not found: " + permissionName
+                                "We couldn't find the permission: " + permissionName
                         ));
 
         if (!role.getPermissions().contains(permission)) {
             throw new IllegalStateException(
                     String.format(
-                            "Permission '%s' is not assigned to role '%s'.",
+                            "Permission '%s' isn't currently assigned to the '%s' role.",
                             permissionName,
                             role.getName()
                     )
@@ -182,8 +182,8 @@ public class RolePermissionService {
 
         return roleRepository.findById(roleId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Role not found"
+                        new EntityNotFoundException(
+                                "We couldn't find that role - please check and try again."
                         ));
     }
 

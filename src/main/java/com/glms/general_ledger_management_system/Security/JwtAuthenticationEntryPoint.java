@@ -88,7 +88,7 @@ public class JwtAuthenticationEntryPoint
 
         errorResponse.put(
                 "message",
-                "Authentication failed"
+                "Your session has expired or is invalid. Please sign in again."
         );
 
 

@@ -14,11 +14,14 @@ import com.glms.general_ledger_management_system.Service.AuthenticationService;
 import jakarta.validation.Valid;
 
 
+import jakarta.persistence.EntityNotFoundException;
+
 import lombok.RequiredArgsConstructor;
 
 
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -96,7 +99,7 @@ public class AuthenticationController {
 
             return ResponseEntity
                     .badRequest()
-                    .body("Invalid Authorization header");
+                    .body("Please provide a valid Authorization header to log out.");
 
         }
 
@@ -215,7 +218,7 @@ public class AuthenticationController {
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
+            throw new AccessDeniedException("Your session isn't authenticated - please sign in again.");
         }
 
 
@@ -230,8 +233,8 @@ public class AuthenticationController {
                 userRepository
                         .findByUsername(username)
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "User not found"
+                                () -> new EntityNotFoundException(
+                                        "We couldn't find the account tied to your session - please sign in again."
                                 )
                         );
 
