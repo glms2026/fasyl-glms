@@ -30,8 +30,8 @@ import { LiveIndicator } from "../components/LiveIndicator";
 import { useAuditLogsQuery } from "../hooks/useAuditLogs";
 import type { AuditLogEntry } from "../types";
 
-const PAGE_SIZE = 25;
-const PAGE_SIZE_OPTIONS = [25, 50];
+const PAGE_SIZE = 12;
+const PAGE_SIZE_OPTIONS = [12, 25, 50];
 const AUTO_REFRESH_MS = 60_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 

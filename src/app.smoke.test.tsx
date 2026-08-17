@@ -68,16 +68,12 @@ function mockAuditPage() {
   };
 }
 
-const emptyPage = {
+// The backend answers approval-request lists with a PagedModel envelope —
+// `{ content, page: { size, number, totalElements, totalPages } }` — not the
+// flat Spring Page used elsewhere, so the mocks mirror the real shape.
+const emptyApprovalsPage = {
   content: [],
-  totalElements: 0,
-  totalPages: 0,
-  size: 1,
-  number: 0,
-  numberOfElements: 0,
-  first: true,
-  last: true,
-  empty: true,
+  page: { size: 1, number: 0, totalElements: 0, totalPages: 0 },
 };
 
 // GET /api/roles — the role catalogue (id, name, permission names).
@@ -92,7 +88,7 @@ vi.mock("@/lib/apiClient", () => ({
   default: {
     get: vi.fn((url: string) => {
       if (url.includes("/user-approval-requests/pending")) {
-        return Promise.resolve({ data: emptyPage });
+        return Promise.resolve({ data: emptyApprovalsPage });
       }
 
       if (url.includes("/roles")) {
@@ -193,6 +189,78 @@ describe("app smoke", () => {
     ]);
   });
 
+  it("shows the queued-approvals count on the sidebar for an ADMIN", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/dashboard");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({ data: mockProfile });
+        }
+
+        // PagedModel envelope, matching the real backend: 3 queued requests.
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({
+            data: {
+              content: [
+                {
+                  id: 1,
+                  userId: 2,
+                  username: "jdoe",
+                  makerId: 1,
+                  makerUsername: "aokonkwo",
+                  action: "USER_LOCK",
+                  status: "PENDING",
+                  roleNames: [],
+                  permissions: [],
+                  reason: "Investigation",
+                  remark: null,
+                  createdAt: "2026-08-17T00:00:00Z",
+                },
+              ],
+              page: { size: 1, number: 0, totalElements: 3, totalPages: 3 },
+            },
+          });
+        }
+
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+
+        if (url.includes("/admin/audit-logs")) {
+          return Promise.resolve({ data: mockAuditPage() });
+        }
+
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      const sidebar = await screen.findByRole("navigation", { name: /main/i });
+
+      // The Approvals item renders the queued count as a badge pill.
+      await waitFor(() => {
+        const approvalsLink = Array.from(sidebar.querySelectorAll("a")).find(
+          (link) => link.textContent?.includes("Approvals"),
+        );
+
+        expect(approvalsLink?.textContent).toContain("3");
+      });
+    } finally {
+      if (original) {
+        mockedGet.mockImplementation(original);
+      }
+    }
+  });
+
   it("renders the settings page with the change-password form", async () => {
     localStorage.setItem("glms.accessToken", "fake-token");
     window.history.pushState({}, "", "/settings");
@@ -266,7 +334,7 @@ describe("app smoke", () => {
         }
 
         if (url.includes("/user-approval-requests/pending")) {
-          return Promise.resolve({ data: emptyPage });
+          return Promise.resolve({ data: emptyApprovalsPage });
         }
 
         if (url.includes("/roles")) {
@@ -363,10 +431,8 @@ describe("app smoke", () => {
           return Promise.resolve({
             data: { ...mockProfile, roles: ["AUTHORIZER"] },
           });
-        }
-
-        if (url.includes("/user-approval-requests/pending")) {
-          return Promise.resolve({ data: emptyPage });
+        }        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
         }
 
         if (url.includes("/roles")) {
@@ -379,6 +445,9 @@ describe("app smoke", () => {
 
         return Promise.resolve({ data: mockProfile });
       });
+
+
+
 
       render(<App />);
 
@@ -439,10 +508,8 @@ describe("app smoke", () => {
           return Promise.resolve({
             data: { ...mockProfile, roles },
           });
-        }
-
-        if (url.includes("/user-approval-requests/pending")) {
-          return Promise.resolve({ data: emptyPage });
+        }        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
         }
 
         if (url.includes("/roles")) {
@@ -455,6 +522,9 @@ describe("app smoke", () => {
 
         return Promise.resolve({ data: mockProfile });
       });
+
+
+
 
       render(<App />);
 

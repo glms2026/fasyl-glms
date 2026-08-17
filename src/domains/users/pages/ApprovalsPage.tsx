@@ -54,7 +54,7 @@ export default function ApprovalsPage() {
 
   const [pendingPage, setPendingPage] = useState(1);
   const [minePage, setMinePage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 12;
 
   // Each queue is role-gated server-side; skip the one the user can't load.
   const pendingQuery = usePendingApprovalsQuery(

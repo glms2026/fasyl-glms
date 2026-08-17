@@ -20,7 +20,7 @@ export function TablePagination({
   totalRows,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 25, 50],
+  pageSizeOptions = [12, 25, 50],
 }: TablePaginationProps) {
   const firstRow = totalRows === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastRow = Math.min(page * pageSize, totalRows);

@@ -24,6 +24,35 @@ import { userFullName, type ManagedUser } from "../types";
 
 type SortDirection = "asc" | "desc";
 
+/** Row wash per status — a symmetrical gradient in the status tone with a
+ *  matching left accent bar, echoing the activity trail's visual language. */
+function statusRowClasses(status: string) {
+  switch (status) {
+    case "ACTIVE":
+      return "border-l-[3px] border-l-emerald-400 bg-gradient-to-r from-emerald-100/60 via-white to-emerald-100/60 hover:from-emerald-200/50 hover:to-emerald-200/50";
+    case "SUSPENDED":
+      return "border-l-[3px] border-l-amber-400 bg-gradient-to-r from-amber-100/60 via-white to-amber-100/60 hover:from-amber-200/50 hover:to-amber-200/50";
+    case "LOCKED":
+      return "border-l-[3px] border-l-red-400 bg-gradient-to-r from-red-100/60 via-white to-red-100/60 hover:from-red-200/50 hover:to-red-200/50";
+    default:
+      return "border-l-[3px] border-l-neutral-300 bg-gradient-to-r from-slate-200/50 via-white to-slate-200/50 hover:from-slate-300/40 hover:to-slate-300/40";
+  }
+}
+
+/** Soft ring colour around the avatar, matching the user's status tone. */
+function statusAvatarRing(status: string) {
+  switch (status) {
+    case "ACTIVE":
+      return "ring-2 ring-emerald-300/70";
+    case "SUSPENDED":
+      return "ring-2 ring-amber-300/70";
+    case "LOCKED":
+      return "ring-2 ring-red-300/70";
+    default:
+      return "ring-2 ring-neutral-300/70";
+  }
+}
+
 function RoleBadges({ roles }: { roles: string[] }) {
   const shown = roles.slice(0, 2);
   const extra = roles.length - shown.length;
@@ -50,7 +79,7 @@ export default function UsersListPage() {
   const [role, setRole] = useState("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
   const [sort, setSort] = useState<{
     field: keyof ManagedUser;
     direction: SortDirection;
@@ -139,7 +168,11 @@ export default function UsersListPage() {
       sortField: "firstName",
       cell: (user) => (
         <div className="flex items-center gap-3">
-          <UserAvatar name={userFullName(user)} size="sm" />
+          <UserAvatar
+            name={userFullName(user)}
+            size="sm"
+            className={statusAvatarRing(user.status)}
+          />
 
           <div className="min-w-0">
             <p className="truncate font-medium text-neutral-900">
@@ -256,6 +289,8 @@ export default function UsersListPage() {
           sort={sort}
           onToggleSort={toggleSort}
           onRowClick={(user) => navigate(`/users/${user.id}`)}
+          separated
+          rowClassName={(user) => statusRowClasses(user.status)}
           empty={
             filterActive ? (
               <EmptyState
@@ -286,6 +321,7 @@ export default function UsersListPage() {
             page={page}
             pageCount={pageCount}
             pageSize={pageSize}
+            pageSizeOptions={[12, 25, 50]}
             totalRows={totalRows}
             onPageChange={setPage}
             onPageSizeChange={(size) => {

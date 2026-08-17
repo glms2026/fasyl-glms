@@ -34,6 +34,10 @@ interface DataTableProps<TRow> {
   onRowClick?: (row: TRow) => void;
   skeletonRows?: number;
   caption?: string;
+  /** Per-row classes, e.g. a colour wash keyed on row state. */
+  rowClassName?: (row: TRow) => string | undefined;
+  /** Render rows as separated bands with vertical spacing between them. */
+  separated?: boolean;
 }
 
 const alignment = {
@@ -67,6 +71,8 @@ export function DataTable<TRow>({
   onRowClick,
   skeletonRows = 6,
   caption,
+  rowClassName,
+  separated = false,
 }: DataTableProps<TRow>) {
   if (error && rows.length === 0) {
     return <ErrorState message={error} onRetry={onRetry} />;
@@ -97,7 +103,12 @@ export function DataTable<TRow>({
         </div>
       )}
 
-      <table className="w-full min-w-[46rem] border-collapse text-sm">
+      <table
+        className={cn(
+          "w-full min-w-[46rem] text-sm",
+          separated ? "border-separate border-spacing-y-2" : "border-collapse",
+        )}
+      >
         {caption && <caption className="sr-only">{caption}</caption>}
 
         <thead>
@@ -120,7 +131,7 @@ export function DataTable<TRow>({
                         : undefined
                   }
                   className={cn(
-                    "bg-neutral-50/80 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500",
+                    "bg-gradient-to-b from-neutral-50 to-white px-6 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500",
                     alignment[column.align ?? "left"],
                     column.hideBelow && hideBelowClass[column.hideBelow],
                     column.className,
@@ -159,7 +170,7 @@ export function DataTable<TRow>({
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-neutral-100">
+        <tbody className={separated ? undefined : "divide-y divide-neutral-100"}>
           {isLoading
             ? Array.from({ length: skeletonRows }).map((_, rowIndex) => (
                 <tr key={`skeleton-${rowIndex}`}>
@@ -176,17 +187,22 @@ export function DataTable<TRow>({
                   ))}
                 </tr>
               ))
-            : rows.map((row) => (
-                <tr
-                  key={getRowId(row)}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={cn(
-                    "transition-colors",
-                    onRowClick
-                      ? "cursor-pointer hover:bg-neutral-50"
-                      : "hover:bg-neutral-50/60",
-                  )}
-                >
+            : rows.map((row) => {
+                const customRowClass = rowClassName?.(row);
+
+                return (
+                  <tr
+                    key={getRowId(row)}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    className={cn(
+                      "transition-colors",
+                      onRowClick && "cursor-pointer",
+                      customRowClass ??
+                        (onRowClick
+                          ? "hover:bg-neutral-50"
+                          : "hover:bg-neutral-50/60"),
+                    )}
+                  >
                   {columns.map((column) => (
                     <td
                       key={column.id}
@@ -200,7 +216,8 @@ export function DataTable<TRow>({
                     </td>
                   ))}
                 </tr>
-              ))}
+                );
+              })}
         </tbody>
       </table>
     </div>

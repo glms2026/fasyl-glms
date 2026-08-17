@@ -8,11 +8,44 @@ import type {
   UserApprovalRequest,
 } from "../types";
 
+/**
+ * The backend answers the list endpoints with a PagedModel envelope —
+ * `{ content: [...], page: { size, number, totalElements, totalPages } }` —
+ * not the flat Spring Page shape the rest of the app uses. Normalise it
+ * once here so every consumer (nav badge count, pagination, metrics) reads
+ * `totalElements` / `totalPages` off the same flat shape as the users module.
+ */
+interface PagedModel<T> {
+  content: T[];
+  page: {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
+  };
+}
+
+function toPage<T>(paged: PagedModel<T>): Page<T> {
+  const { content, page } = paged;
+
+  return {
+    content,
+    totalElements: page.totalElements,
+    totalPages: page.totalPages,
+    size: page.size,
+    number: page.number,
+    numberOfElements: content.length,
+    first: page.number === 0,
+    last: page.totalPages === 0 || page.number >= page.totalPages - 1,
+    empty: content.length === 0,
+  };
+}
+
 /** HTTP client for the `/api/user-approval-requests` maker-checker queue. */
 export const approvalService = {
   /** GET /api/user-approval-requests/pending — the authorizer's queue. */
   async listPending(params: PageRequest = {}): Promise<Page<UserApprovalRequest>> {
-    const response = await apiClient.get<Page<UserApprovalRequest>>(
+    const response = await apiClient.get<PagedModel<UserApprovalRequest>>(
       "/user-approval-requests/pending",
       {
         params: {
@@ -23,12 +56,12 @@ export const approvalService = {
       },
     );
 
-    return response.data;
+    return toPage(response.data);
   },
 
   /** GET /api/user-approval-requests/mine — requests the caller submitted. */
   async listMine(params: PageRequest = {}): Promise<Page<UserApprovalRequest>> {
-    const response = await apiClient.get<Page<UserApprovalRequest>>(
+    const response = await apiClient.get<PagedModel<UserApprovalRequest>>(
       "/user-approval-requests/mine",
       {
         params: {
@@ -39,7 +72,7 @@ export const approvalService = {
       },
     );
 
-    return response.data;
+    return toPage(response.data);
   },
 
   /** GET /api/user-approval-requests/{id} */

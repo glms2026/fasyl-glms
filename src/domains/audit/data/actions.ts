@@ -116,39 +116,40 @@ export const actionRowAccentClasses: Record<ActionTone, string> = {
   neutral: "border-l-neutral-300",
 };
 
-/** Row wash per tone — a horizontal gradient that fades the theme colour
- *  into white, so each table row keeps the card's colour identity. */
+/** Row wash per tone — a symmetrical horizontal gradient that washes the
+ *  theme colour in from both edges and fades toward the centre, so each
+ *  table row keeps the card's colour identity on both sides. */
 export const actionRowClasses: Record<ActionTone, string> = {
-  create: "bg-gradient-to-r from-emerald-100/70 via-white to-white",
-  assign: "bg-gradient-to-r from-teal-100/70 via-white to-white",
-  update: "bg-gradient-to-r from-blue-100/70 via-white to-white",
-  read: "bg-gradient-to-r from-slate-200/60 via-white to-white",
-  lock: "bg-gradient-to-r from-amber-100/70 via-white to-white",
-  suspend: "bg-gradient-to-r from-orange-100/70 via-white to-white",
-  deactivate: "bg-gradient-to-r from-red-100/70 via-white to-white",
-  recover: "bg-gradient-to-r from-green-100/70 via-white to-white",
-  auth: "bg-gradient-to-r from-indigo-100/70 via-white to-white",
-  password: "bg-gradient-to-r from-violet-100/70 via-white to-white",
-  ledger: "bg-gradient-to-r from-cyan-100/70 via-white to-white",
-  permission: "bg-gradient-to-r from-purple-100/70 via-white to-white",
-  neutral: "bg-gradient-to-r from-neutral-200/60 via-white to-white",
+  create: "bg-gradient-to-r from-emerald-100/70 via-white to-emerald-100/70",
+  assign: "bg-gradient-to-r from-teal-100/70 via-white to-teal-100/70",
+  update: "bg-gradient-to-r from-blue-100/70 via-white to-blue-100/70",
+  read: "bg-gradient-to-r from-slate-200/60 via-white to-slate-200/60",
+  lock: "bg-gradient-to-r from-amber-100/70 via-white to-amber-100/70",
+  suspend: "bg-gradient-to-r from-orange-100/70 via-white to-orange-100/70",
+  deactivate: "bg-gradient-to-r from-red-100/70 via-white to-red-100/70",
+  recover: "bg-gradient-to-r from-green-100/70 via-white to-green-100/70",
+  auth: "bg-gradient-to-r from-indigo-100/70 via-white to-indigo-100/70",
+  password: "bg-gradient-to-r from-violet-100/70 via-white to-violet-100/70",
+  ledger: "bg-gradient-to-r from-cyan-100/70 via-white to-cyan-100/70",
+  permission: "bg-gradient-to-r from-purple-100/70 via-white to-purple-100/70",
+  neutral: "bg-gradient-to-r from-neutral-200/60 via-white to-neutral-200/60",
 };
 
-/** Hover intensification of the row wash. */
+/** Hover intensification of the row wash, deepened on both edges. */
 export const actionRowHoverClasses: Record<ActionTone, string> = {
-  create: "hover:from-emerald-200/60",
-  assign: "hover:from-teal-200/60",
-  update: "hover:from-blue-200/60",
-  read: "hover:from-slate-300/50",
-  lock: "hover:from-amber-200/60",
-  suspend: "hover:from-orange-200/60",
-  deactivate: "hover:from-red-200/60",
-  recover: "hover:from-green-200/60",
-  auth: "hover:from-indigo-200/60",
-  password: "hover:from-violet-200/60",
-  ledger: "hover:from-cyan-200/60",
-  permission: "hover:from-purple-200/60",
-  neutral: "hover:from-neutral-300/50",
+  create: "hover:from-emerald-200/60 hover:to-emerald-200/60",
+  assign: "hover:from-teal-200/60 hover:to-teal-200/60",
+  update: "hover:from-blue-200/60 hover:to-blue-200/60",
+  read: "hover:from-slate-300/50 hover:to-slate-300/50",
+  lock: "hover:from-amber-200/60 hover:to-amber-200/60",
+  suspend: "hover:from-orange-200/60 hover:to-orange-200/60",
+  deactivate: "hover:from-red-200/60 hover:to-red-200/60",
+  recover: "hover:from-green-200/60 hover:to-green-200/60",
+  auth: "hover:from-indigo-200/60 hover:to-indigo-200/60",
+  password: "hover:from-violet-200/60 hover:to-violet-200/60",
+  ledger: "hover:from-cyan-200/60 hover:to-cyan-200/60",
+  permission: "hover:from-purple-200/60 hover:to-purple-200/60",
+  neutral: "hover:from-neutral-300/50 hover:to-neutral-300/50",
 };
 
 /** Action-name text colour per tone, used inside table cells. */
