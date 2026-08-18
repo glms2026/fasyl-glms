@@ -76,13 +76,15 @@ export default function DashboardPage() {
               </Link>
             )}
 
-            <Link
-              to="/create-gl"
-              className={cn(buttonVariants({ size: "lg" }), "px-4")}
-            >
-              <Landmark className="size-4" />
-              Create GL
-            </Link>
+            {(access.isAdmin || access.roles.includes("CREATOR")) && (
+              <Link
+                to="/create-gl"
+                className={cn(buttonVariants({ size: "lg" }), "px-4")}
+              >
+                <Landmark className="size-4" />
+                Create GL
+              </Link>
+            )}
           </>
         }
       />

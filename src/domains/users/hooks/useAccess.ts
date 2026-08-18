@@ -21,6 +21,7 @@ export function useAccess() {
   const isAuthorizer = roles.includes("AUTHORIZER");
 
   return {
+    roles,
     isAdmin,
     isControl,
     isAuthorizer,

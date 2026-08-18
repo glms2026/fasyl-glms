@@ -11,6 +11,8 @@ interface QuickAction {
   icon: LucideIcon;
   /** Only makers (CONTROL/ADMIN) may reach the destination. */
   makerOnly?: boolean;
+  /** If set, only these roles see the action. */
+  allowedRoles?: readonly string[];
 }
 
 /** Every destination here is a mounted route — no dead links. */
@@ -20,6 +22,7 @@ const actions: QuickAction[] = [
     description: "Open a new ledger account",
     href: "/create-gl",
     icon: Plus,
+    allowedRoles: ["ADMIN", "CREATOR"],
   },
   {
     label: "Add a user",
@@ -33,6 +36,7 @@ const actions: QuickAction[] = [
     description: "Review roles, locks and suspensions",
     href: "/users/list",
     icon: Users,
+    allowedRoles: ["ADMIN", "CONTROL", "AUTHORIZER"],
   },
   {
     label: "Change your password",
@@ -43,9 +47,13 @@ const actions: QuickAction[] = [
 ];
 
 export function QuickActions() {
-  const { canMakeChanges } = useAccess();
+  const { canMakeChanges, roles } = useAccess();
 
-  const visible = actions.filter((action) => !action.makerOnly || canMakeChanges);
+  const visible = actions.filter((action) => {
+    if (action.makerOnly && !canMakeChanges) return false;
+    if (action.allowedRoles) return action.allowedRoles.some((r) => roles.includes(r));
+    return true;
+  });
 
   return (
     <ul className="space-y-2">

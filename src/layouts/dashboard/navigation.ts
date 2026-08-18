@@ -17,6 +17,8 @@ export interface NavigationItem {
   matchNested?: boolean;
   /** Hidden from every role but ADMIN (backend: /api/admin/*). */
   adminOnly?: boolean;
+  /** If set, only these roles see the item. Undefined means everyone. */
+  allowedRoles?: readonly string[];
 }
 
 /**
@@ -34,22 +36,26 @@ export const primaryNavigation: NavigationItem[] = [
     title: "Create GL",
     href: "/create-gl",
     icon: Plus,
+    allowedRoles: ["ADMIN", "CREATOR"],
   },
   {
     title: "User Management",
     href: "/users",
     icon: UserCog,
     matchNested: true,
+    allowedRoles: ["ADMIN", "CONTROL", "AUTHORIZER"],
   },
   {
     title: "Approvals",
     href: "/approvals",
     icon: ClipboardCheck,
+    allowedRoles: ["ADMIN", "AUTHORIZER"],
   },
   {
     title: "Roles & Permissions",
     href: "/roles-permissions",
     icon: ShieldCheck,
+    allowedRoles: ["ADMIN", "CONTROL"],
   },
   {
     title: "Audit Logs",

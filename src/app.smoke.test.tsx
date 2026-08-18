@@ -84,6 +84,12 @@ const mockRoles = [
   { id: 4, name: "CREATOR", permissions: ["LEDGER_CREATE"] },
 ];
 
+// The clipboard write is a browser capability jsdom doesn't provide; stub
+// it so the copy action can be asserted directly.
+vi.mock("@/lib/clipboard", () => ({
+  copyToClipboard: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock("@/lib/apiClient", () => ({
   default: {
     get: vi.fn((url: string) => {
@@ -116,6 +122,7 @@ vi.mock("@/lib/apiClient", () => ({
 
 import App from "@/App";
 import apiClient from "@/lib/apiClient";
+import { copyToClipboard } from "@/lib/clipboard";
 import { useAuthStore } from "@/domains/auth/stores/authStore";
 
 // Auto-cleanup is off (globals: false), so unmount between cases.
@@ -318,6 +325,126 @@ describe("app smoke", () => {
     expect(body?.textContent).toMatch(/Sample audit description 1/);
   });
 
+  it("shows only role-appropriate sidebar items for a CREATOR", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/dashboard");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["CREATOR"] },
+          });
+        }
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
+        }
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      const sidebar = await screen.findByRole("navigation", { name: /main/i });
+      const labels = Array.from(sidebar.querySelectorAll("a")).map(
+        (link) => link.textContent,
+      );
+
+      expect(labels).toEqual(["Dashboard", "Create GL", "Settings"]);
+      expect(labels).not.toContain("User Management");
+      expect(labels).not.toContain("Approvals");
+      expect(labels).not.toContain("Roles & Permissions");
+      expect(labels).not.toContain("Audit Logs");
+    } finally {
+      if (original) mockedGet.mockImplementation(original);
+    }
+  });
+
+  it("shows only role-appropriate sidebar items for an AUTHORIZER", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/dashboard");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["AUTHORIZER"] },
+          });
+        }
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
+        }
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      const sidebar = await screen.findByRole("navigation", { name: /main/i });
+      const labels = Array.from(sidebar.querySelectorAll("a")).map(
+        (link) => link.textContent,
+      );
+
+      expect(labels).toEqual(["Dashboard", "User Management", "Approvals", "Settings"]);
+      expect(labels).not.toContain("Create GL");
+      expect(labels).not.toContain("Roles & Permissions");
+      expect(labels).not.toContain("Audit Logs");
+    } finally {
+      if (original) mockedGet.mockImplementation(original);
+    }
+  });
+
+  it("keeps the approvals queue out of reach for non-checker roles", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    window.history.pushState({}, "", "/approvals");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["CONTROL"] },
+          });
+        }
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
+        }
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      // The authorizer guard bounces the visitor back to the dashboard.
+      await waitFor(
+        () => expect(window.location.pathname).toBe("/dashboard"),
+        { timeout: 5000 },
+      );
+    } finally {
+      if (original) mockedGet.mockImplementation(original);
+    }
+  });
+
   it("keeps the audit trail out of reach for non-admin roles", async () => {
     localStorage.setItem("glms.accessToken", "fake-token");
     window.history.pushState({}, "", "/audit-logs");
@@ -483,9 +610,12 @@ describe("app smoke", () => {
   });
 
   /** Signs a session in, seeds one saved credential for user #2, and opens
-   *  that user's row menu. Returns whether the copy item rendered. (The
-   *  signed-in profile is id 1, so boot never consumes the id-2 entry.) */
-  async function rowMenuHasCopyAction(roles: string[]): Promise<boolean> {
+   *  that user's row menu. Returns which credential-delivery items rendered.
+   *  (The signed-in profile is id 1, so boot never consumes the id-2 entry.) */
+  async function rowMenuCredentialActions(roles: string[]): Promise<{
+    email: boolean;
+    copy: boolean;
+  }> {
     localStorage.setItem("glms.accessToken", "fake-token");
     localStorage.setItem(
       "glms:created-credentials:v1",
@@ -543,11 +673,16 @@ describe("app smoke", () => {
         { timeout: 5000 },
       );
 
-      return (
-        screen.queryByRole("menuitem", {
-          name: /copy login credentials/i,
-        }) !== null
-      );
+      return {
+        email:
+          screen.queryByRole("menuitem", {
+            name: /email login credentials/i,
+          }) !== null,
+        copy:
+          screen.queryByRole("menuitem", {
+            name: /copy login credentials/i,
+          }) !== null,
+      };
     } finally {
       if (original) {
         mockedGet.mockImplementation(original);
@@ -555,12 +690,280 @@ describe("app smoke", () => {
     }
   }
 
-  it("lets a CONTROL user copy a newly created user's login credentials", async () => {
-    await expect(rowMenuHasCopyAction(["CONTROL"])).resolves.toBe(true);
+  it("lets a CONTROL user email a newly created user's login credentials", async () => {
+    const actions = await rowMenuCredentialActions(["CONTROL"]);
+
+    expect(actions.email).toBe(true);
+    expect(actions.copy).toBe(true);
   });
 
-  it("hides the copy-credentials action for non-CONTROL roles", async () => {
-    await expect(rowMenuHasCopyAction(["AUTHORIZER"])).resolves.toBe(false);
+  it("hides the credential-delivery actions for non-CONTROL roles", async () => {
+    const actions = await rowMenuCredentialActions(["AUTHORIZER"]);
+
+    expect(actions.email).toBe(false);
+    expect(actions.copy).toBe(false);
+  });
+
+  it("copies the credentials to the clipboard as Username / Password", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    localStorage.setItem(
+      "glms:created-credentials:v1",
+      JSON.stringify({
+        2: {
+          username: "user2",
+          password: "Temp@1234",
+          createdAt: "2026-08-16T00:00:00.000Z",
+        },
+      }),
+    );
+    window.history.pushState({}, "", "/users/list");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+    const clipboardMock = vi.mocked(copyToClipboard);
+    const openSpy = vi
+      .spyOn(window, "open")
+      .mockImplementation(() => null);
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["CONTROL"] },
+          });
+        }
+
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
+        }
+
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      await waitFor(
+        () =>
+          expect(document.querySelectorAll("tbody tr").length).toBe(10),
+        { timeout: 5000 },
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Actions for First2 Last2" }),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("menuitem", {
+          name: /copy login credentials/i,
+        }),
+      );
+
+      await waitFor(() =>
+        expect(clipboardMock).toHaveBeenCalledWith(
+          "Username: user2\nPassword: Temp@1234",
+        ),
+      );
+
+      // Copying never opens Gmail (that's the email action's job).
+      expect(openSpy).not.toHaveBeenCalled();
+    } finally {
+      if (original) {
+        mockedGet.mockImplementation(original);
+      }
+      clipboardMock.mockClear();
+      openSpy.mockRestore();
+    }
+  });
+
+  it("previews the credential email and opens Gmail compose on confirm", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    localStorage.setItem(
+      "glms:created-credentials:v1",
+      JSON.stringify({
+        2: {
+          username: "user2",
+          password: "Temp@1234",
+          createdAt: "2026-08-16T00:00:00.000Z",
+        },
+      }),
+    );
+    window.history.pushState({}, "", "/users/list");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+    const openSpy = vi
+      .spyOn(window, "open")
+      .mockImplementation(() => null);
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["CONTROL"] },
+          });
+        }
+
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
+        }
+
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      await waitFor(
+        () =>
+          expect(document.querySelectorAll("tbody tr").length).toBe(10),
+        { timeout: 5000 },
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Actions for First2 Last2" }),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("menuitem", {
+          name: /email login credentials/i,
+        }),
+      );
+
+      // Nothing opens yet — the dialog previews recipient, subject and body.
+      const dialog = await screen.findByRole("dialog");
+      expect(dialog.textContent).toContain("To: user2@fasyl.com");
+      expect(dialog.textContent).toContain(
+        "Subject: Your GLMS login credentials",
+      );
+      expect(dialog.textContent).toContain("Dear First2 Last2,");
+      expect(dialog.textContent).toContain("Login Username: user2");
+      expect(dialog.textContent).toContain("Temporary Password: Temp@1234");
+      expect(dialog.textContent).toContain("GLMS Login URL: ");
+      expect(dialog.textContent).toContain("/login");
+      expect(dialog.textContent).toContain("Regards,\naokonkwo");
+      expect(openSpy).not.toHaveBeenCalled();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: /open gmail compose/i }),
+      );
+
+      expect(openSpy).toHaveBeenCalledTimes(1);
+
+      const [url, target] = openSpy.mock.calls[0] as [string, string];
+
+      expect(target).toBe("_blank");
+      expect(url.startsWith("https://mail.google.com/mail/?view=cm&fs=1")).toBe(
+        true,
+      );
+      expect(url).toContain(`to=${encodeURIComponent("user2@fasyl.com")}`);
+      expect(url).toContain(`su=${encodeURIComponent("Your GLMS login credentials")}`);
+
+      // The seeded plaintext password travels only inside the body.
+      const body = decodeURIComponent(
+        url.slice(url.indexOf("body=") + "body=".length),
+      );
+      expect(body).toContain("Dear First2 Last2,");
+      expect(body).toContain("Login Username: user2");
+      expect(body).toContain("Temporary Password: Temp@1234");
+      expect(body).toContain("GLMS Login URL: ");
+      expect(body).toContain("/login");
+      expect(body).toContain("Regards,\naokonkwo");
+    } finally {
+      if (original) {
+        mockedGet.mockImplementation(original);
+      }
+      openSpy.mockRestore();
+    }
+  });
+
+  it("cancelling the credential-email dialog opens nothing", async () => {
+    localStorage.setItem("glms.accessToken", "fake-token");
+    localStorage.setItem(
+      "glms:created-credentials:v1",
+      JSON.stringify({
+        2: {
+          username: "user2",
+          password: "Temp@1234",
+          createdAt: "2026-08-16T00:00:00.000Z",
+        },
+      }),
+    );
+    window.history.pushState({}, "", "/users/list");
+
+    const mockedGet = vi.mocked(apiClient.get);
+    const original = mockedGet.getMockImplementation();
+    const openSpy = vi
+      .spyOn(window, "open")
+      .mockImplementation(() => null);
+
+    try {
+      mockedGet.mockImplementation((url: string) => {
+        if (url.includes("/auth/profile")) {
+          return Promise.resolve({
+            data: { ...mockProfile, roles: ["CONTROL"] },
+          });
+        }
+
+        if (url.includes("/user-approval-requests/pending")) {
+          return Promise.resolve({ data: emptyApprovalsPage });
+        }
+
+        if (url.includes("/roles")) {
+          return Promise.resolve({ data: mockRoles });
+        }
+
+        if (url.includes("/users")) {
+          return Promise.resolve({ data: mockUsersPage() });
+        }
+
+        return Promise.resolve({ data: mockProfile });
+      });
+
+      render(<App />);
+
+      await waitFor(
+        () =>
+          expect(document.querySelectorAll("tbody tr").length).toBe(10),
+        { timeout: 5000 },
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Actions for First2 Last2" }),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("menuitem", {
+          name: /email login credentials/i,
+        }),
+      );
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: /^cancel$/i }),
+      );
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+      expect(openSpy).not.toHaveBeenCalled();
+    } finally {
+      if (original) {
+        mockedGet.mockImplementation(original);
+      }
+      openSpy.mockRestore();
+    }
   });
 
   it("wipes saved credentials once the account signs in on this device", async () => {

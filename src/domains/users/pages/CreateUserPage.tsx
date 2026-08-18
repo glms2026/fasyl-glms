@@ -23,7 +23,11 @@ import { saveCreatedCredentials } from "../data/createdCredentials";
 import { rolePermissionPresets } from "../data/permissions";
 import { useCreateUser } from "../hooks/useUsers";
 import { useRolesCatalogue } from "../hooks/useRoles";
-import { createUserSchema, type CreateUserFormValues } from "../schema";
+import {
+  ADMIN_ROLE_CREATION_MESSAGE,
+  createUserSchema,
+  type CreateUserFormValues,
+} from "../schema";
 
 /**
  * Serialised form of the selected role set, so the permission-sync effect
@@ -107,28 +111,37 @@ export default function CreateUserPage() {
 
   const password = watch("password");
 
-  const onSubmit = handleSubmit(async (values) => {
-    setFormError(null);
+  const onSubmit = handleSubmit(
+    async (values) => {
+      setFormError(null);
 
-    try {
-      const created = await createUser.mutateAsync({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        username: values.username,
-        email: values.email,
-        password: values.password,
-        roles: values.roles,
-        permissions: values.permissions,
-        reason: values.reason,
-      });
+      try {
+        const created = await createUser.mutateAsync({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          username: values.username,
+          email: values.email,
+          password: values.password,
+          roles: values.roles,
+          permissions: values.permissions,
+          reason: values.reason,
+        });
 
-      // The backend never returns the password again, so keep it locally for
-      // the "Copy credentials" action in the users table.
-      saveCreatedCredentials(created.id, created.username, values.password);
-    } catch {
-      // Surfaced through formError by the onError callback.
-    }
-  });
+        // The backend never returns the password again, so keep it locally
+        // for the "Email credentials" action in the users table.
+        saveCreatedCredentials(created.id, created.username, values.password);
+      } catch {
+        // Surfaced through formError by the onError callback.
+      }
+    },
+    (validationErrors) => {
+      // The ADMIN-role rejection is a workflow rule, not a field typo, so
+      // it gets a toast on top of the inline error under the Roles field.
+      if (validationErrors.roles?.message === ADMIN_ROLE_CREATION_MESSAGE) {
+        toast.error(ADMIN_ROLE_CREATION_MESSAGE);
+      }
+    },
+  );
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
@@ -176,7 +189,7 @@ export default function CreateUserPage() {
         <FormField
           label="Roles"
           required
-          hint="Type a role name and press Enter, or tap a suggestion. Permissions below follow the selected roles' capabilities."
+          hint="Type a role name and press Enter, or tap a suggestion. Permissions below follow the selected roles' capabilities. The ADMIN role can't be granted here — administrator accounts are provisioned directly, outside the approval workflow."
           error={errors.roles?.message}
         >
           {(field) => (
@@ -191,6 +204,7 @@ export default function CreateUserPage() {
                   value={controlled.value}
                   onChange={controlled.onChange}
                   suggestions={catalogue.data?.map((role) => role.name)}
+                  exclude={["ADMIN"]}
                 />
               )}
             />

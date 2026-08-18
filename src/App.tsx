@@ -9,6 +9,7 @@ import MustChangePassword from "./routes/MustChangePassword";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import RequireAdmin from "./routes/RequireAdmin";
+import RequireAuthorizer from "./routes/RequireAuthorizer";
 import RequireMaker from "./routes/RequireMaker";
 import { RouteLoader } from "./routes/RouteLoader";
 
@@ -90,11 +91,16 @@ export default function App() {
 
                 <Route path="/users/:id" element={<UserDetailPage />} />
 
-                <Route path="/approvals" element={<ApprovalsPage />} />
-                <Route
-                  path="/roles-permissions"
-                  element={<RolesPermissionsPage />}
-                />
+                <Route element={<RequireAuthorizer />}>
+                  <Route path="/approvals" element={<ApprovalsPage />} />
+                </Route>
+
+                <Route element={<RequireAdmin />}>
+                  <Route
+                    path="/roles-permissions"
+                    element={<RolesPermissionsPage />}
+                  />
+                </Route>
 
                 {/* The audit trail is ADMIN-only, end to end. */}
                 <Route element={<RequireAdmin />}>

@@ -38,22 +38,47 @@ const permissions = z
   .array(z.string())
   .min(1, "Grant at least one permission");
 
-export const createUserSchema = z.object({
-  firstName: name("first name", 100),
-  lastName: name("last name", 100),
-  username,
-  email,
-  password: z
-    .string()
-    .min(8, "Use at least 8 characters")
-    .regex(/[A-Z]/, "Add an uppercase letter")
-    .regex(/[a-z]/, "Add a lowercase letter")
-    .regex(/\d/, "Add a number")
-    .regex(/[^A-Za-z0-9]/, "Add a special character"),
-  roles,
-  permissions,
-  reason,
-});
+/**
+ * Why the ADMIN role can't be granted on user creation: the backend
+ * refuses to create ADMIN accounts through the maker-checker workflow
+ * (UserApprovalRequestService.approveUserCreation), so such a request can
+ * never be approved. Shared so the inline error and the toast say the same
+ * thing.
+ */
+export const ADMIN_ROLE_CREATION_MESSAGE =
+  "Administrator accounts are provisioned directly and can't be created through the approval workflow.";
+
+export const createUserSchema = z
+  .object({
+    firstName: name("first name", 100),
+    lastName: name("last name", 100),
+    username,
+    email,
+    password: z
+      .string()
+      .min(8, "Use at least 8 characters")
+      .regex(/[A-Z]/, "Add an uppercase letter")
+      .regex(/[a-z]/, "Add a lowercase letter")
+      .regex(/\d/, "Add a number")
+      .regex(/[^A-Za-z0-9]/, "Add a special character"),
+    roles,
+    permissions,
+    reason,
+  })
+  .superRefine((value, ctx) => {
+    // The backend refuses to create ADMIN accounts through the maker-checker
+    // workflow (UserApprovalRequestService.approveUserCreation throws
+    // AccessDeniedException for them), so a request with the ADMIN role can
+    // never be approved and would sit in the queue forever. Block it here,
+    // where the user can read why, instead of at approval time.
+    if (value.roles.some((role) => role.trim().toUpperCase() === "ADMIN")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["roles"],
+        message: ADMIN_ROLE_CREATION_MESSAGE,
+      });
+    }
+  });
 
 const editableStatuses = [
   "ACTIVE",

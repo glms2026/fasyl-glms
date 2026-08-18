@@ -6,11 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 import { knownRoles } from "../data/permissions";
+import { roleColorClass } from "../data/roleColors";
 
 interface RolePickerProps {
   value: string[];
   onChange: (roles: string[]) => void;
   suggestions?: string[];
+  /** Roles that can't be added here — hidden from suggestions and refused
+   *  when typed (e.g. ADMIN on user creation, which the backend will never
+   *  approve through the maker-checker workflow). */
+  exclude?: string[];
   /** Called whenever a role is added, e.g. to apply a permission preset. */
   onAdd?: (role: string) => void;
   error?: string;
@@ -29,6 +34,7 @@ export function RolePicker({
   value,
   onChange,
   suggestions = [...knownRoles],
+  exclude = [],
   onAdd,
   error,
   disabled = false,
@@ -42,11 +48,14 @@ export function RolePicker({
   const [draft, setDraft] = useState("");
 
   const selected = new Set(value);
+  const excluded = new Set(
+    exclude.map((role) => role.trim().toUpperCase()),
+  );
 
   const add = (raw: string) => {
     const role = raw.trim().toUpperCase();
 
-    if (!role || selected.has(role)) return;
+    if (!role || selected.has(role) || excluded.has(role)) return;
 
     onChange([...value, role]);
     setDraft("");
@@ -57,7 +66,11 @@ export function RolePicker({
     onChange(value.filter((candidate) => candidate !== role));
   };
 
-  const availableSuggestions = suggestions.filter((role) => !selected.has(role));
+  const availableSuggestions = suggestions.filter(
+    (role) =>
+      !selected.has(role) &&
+      !excluded.has(role.trim().toUpperCase()),
+  );
 
   const submitDraft = () => {
     add(draft);
@@ -69,7 +82,15 @@ export function RolePicker({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {value.map((role) => (
-            <Badge key={role} variant="outline" className="gap-1.5 py-1 pr-1.5 pl-2.5">
+            <Badge
+              key={role}
+              variant="outline"
+              className={cn("gap-1.5 py-1 pr-1.5 pl-2.5", roleColorClass(role))}
+            >
+              <span
+                className="size-1.5 rounded-full bg-current opacity-70"
+                aria-hidden="true"
+              />
               {role}
 
               <button

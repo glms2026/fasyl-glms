@@ -57,7 +57,7 @@ function isPasswordChangeRequired(error: unknown): boolean {
 
 /**
  * A successful sign-in on this device means the account's temporary
- * password — if it was created here and saved for the "Copy credentials"
+ * password — if it was created here and saved for the "Email credentials"
  * action — is spent: the backend forces the change on first login. Wipe
  * the plaintext so the action disappears even for CONTROL users.
  */
