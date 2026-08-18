@@ -11,6 +11,7 @@ import PublicRoute from "./routes/PublicRoute";
 import RequireAdmin from "./routes/RequireAdmin";
 import RequireAuthorizer from "./routes/RequireAuthorizer";
 import RequireMaker from "./routes/RequireMaker";
+import RequireRolesAccess from "./routes/RequireRolesAccess";
 import { RouteLoader } from "./routes/RouteLoader";
 
 // Auth screens load eagerly: one of them is almost always the first paint.
@@ -95,7 +96,7 @@ export default function App() {
                   <Route path="/approvals" element={<ApprovalsPage />} />
                 </Route>
 
-                <Route element={<RequireAdmin />}>
+                <Route element={<RequireRolesAccess />}>
                   <Route
                     path="/roles-permissions"
                     element={<RolesPermissionsPage />}
