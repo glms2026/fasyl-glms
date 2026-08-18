@@ -15,10 +15,21 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
 import { useAuth } from "@/domains/auth/hooks/useAuth";
+import {
+  ApprovalActionPieChart,
+  DistributionChart,
+  ROLE_PALETTES,
+  RoleBarChart,
+} from "@/domains/users/components/UserCharts";
+import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
+import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
 import { cn } from "@/lib/utils";
 
-import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
-import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
+import {
+  deriveApprovalActionDistribution,
+  deriveRoleDistribution,
+  deriveStatusDistribution,
+} from "../data/chartData";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -37,7 +48,7 @@ const statusBadge: Record<string, { className: string; icon: typeof CheckCircle2
 export function ControlDashboard() {
   const { user } = useAuth();
   const usersQuery = useAllUsersQuery();
-  const approvalsQuery = usePendingApprovalsQuery({ page: 0, size: 10 }, true);
+  const approvalsQuery = usePendingApprovalsQuery({ page: 0, size: 100 }, true);
 
   const users = usersQuery.data ?? [];
   const pendingApprovals = approvalsQuery.data?.content ?? [];
@@ -45,9 +56,14 @@ export function ControlDashboard() {
   const suspendedUsers = users.filter((u) => u.status === "SUSPENDED");
   const recentUsers = users.slice(0, 5);
 
+  // Derive chart data
+  const statusDistData = deriveStatusDistribution(users);
+  const roleDistData = deriveRoleDistribution(users);
+  const actionDistData = deriveApprovalActionDistribution(pendingApprovals);
+
   return (
     <div className="space-y-6">
-      {/* Header with sky blue accent */}
+      {/* Header */}
       <PageHeader
         title={`${greeting()}, ${user?.username ?? "there"}`}
         description="Maker workspace — create and manage users"
@@ -63,7 +79,7 @@ export function ControlDashboard() {
         }
       />
 
-      {/* Metrics row — 4 cards with sky gradient */}
+      {/* Metrics row */}
       <section aria-label="Key metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Total Users"
@@ -93,6 +109,23 @@ export function ControlDashboard() {
           isLoading={usersQuery.isLoading}
         />
       </section>
+
+      {/* Charts row — status donut + role bar */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <SectionCard
+          title="User Status"
+          description="Distribution across account states"
+        >
+          <DistributionChart data={statusDistData} isLoading={usersQuery.isLoading} emptyLabel="No users yet" />
+        </SectionCard>
+
+        <SectionCard
+          title="Role Distribution"
+          description="Users per role"
+        >
+          <RoleBarChart data={roleDistData} isLoading={usersQuery.isLoading} palette={ROLE_PALETTES.CONTROL} />
+        </SectionCard>
+      </div>
 
       {/* Main content — 2/3 + 1/3 */}
       <div className="grid gap-6 xl:grid-cols-3">
@@ -154,7 +187,7 @@ export function ControlDashboard() {
           </div>
         </SectionCard>
 
-        {/* Quick actions */}
+        {/* Quick actions + action distribution */}
         <div className="space-y-6">
           <SectionCard title="Quick Actions">
             <ul className="space-y-2">
@@ -203,23 +236,12 @@ export function ControlDashboard() {
             </ul>
           </SectionCard>
 
-          {/* Pending approvals summary */}
-          <SectionCard title="Pending Approvals">
-            <div className="space-y-3">
-              {pendingApprovals.slice(0, 3).map((approval) => (
-                <div key={approval.id} className="flex items-center gap-3 rounded-lg border border-sky-100 bg-sky-50 p-3">
-                  <Clock className="size-4 text-sky-600" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-neutral-900">{approval.action.replace(/_/g, " ")}</p>
-                    <p className="text-xs text-neutral-500">by {approval.makerUsername}</p>
-                  </div>
-                  <span className="text-xs text-neutral-400">{approval.createdAt ? new Date(approval.createdAt).toLocaleDateString() : "N/A"}</span>
-                </div>
-              ))}
-              {pendingApprovals.length === 0 && (
-                <p className="text-sm text-neutral-500">No pending approvals</p>
-              )}
-            </div>
+          <SectionCard title="Pending by Action">
+            <ApprovalActionPieChart
+              data={actionDistData}
+              isLoading={approvalsQuery.isLoading}
+              palette={ROLE_PALETTES.CONTROL}
+            />
           </SectionCard>
         </div>
       </div>

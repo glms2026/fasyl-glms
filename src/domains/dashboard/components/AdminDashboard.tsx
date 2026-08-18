@@ -13,11 +13,23 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
 import { useAuth } from "@/domains/auth/hooks/useAuth";
 import { PendingApprovalsList } from "@/domains/users/components/PendingApprovalsList";
+import {
+  ApprovalTrendChart,
+  DistributionChart,
+  ROLE_PALETTES,
+  RoleBarChart,
+  UserGrowthChart,
+} from "@/domains/users/components/UserCharts";
 import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
 import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
 import { cn } from "@/lib/utils";
 
-
+import {
+  deriveApprovalTrend,
+  deriveRoleDistribution,
+  deriveStatusDistribution,
+  deriveUserGrowth,
+} from "../data/chartData";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -26,17 +38,21 @@ function greeting(): string {
   return "Good evening";
 }
 
-
-
 export function AdminDashboard() {
   const { user } = useAuth();
   const usersQuery = useAllUsersQuery();
-  const approvalsQuery = usePendingApprovalsQuery({ page: 0, size: 6 }, true);
+  const approvalsQuery = usePendingApprovalsQuery({ page: 0, size: 100 }, true);
 
   const users = usersQuery.data ?? [];
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.status === "ACTIVE").length;
   const pendingApprovals = approvalsQuery.data?.content ?? [];
+
+  // Derive chart data from live API responses
+  const userGrowthData = deriveUserGrowth(users);
+  const statusDistData = deriveStatusDistribution(users);
+  const roleDistData = deriveRoleDistribution(users);
+  const approvalTrendData = deriveApprovalTrend(pendingApprovals);
 
   return (
     <div className="space-y-6">
@@ -64,7 +80,7 @@ export function AdminDashboard() {
         }
       />
 
-      {/* Metrics row — 4 cards with indigo gradient */}
+      {/* Metrics row */}
       <section aria-label="Key metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Total Users"
@@ -95,11 +111,44 @@ export function AdminDashboard() {
         />
       </section>
 
-      {/* Main content — 2/3 + 1/3 */}
+      {/* Charts row 1 — user growth + approval trend */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <SectionCard
+          title="User Growth"
+          description="Cumulative users over time"
+        >
+          <UserGrowthChart data={userGrowthData} isLoading={usersQuery.isLoading} />
+        </SectionCard>
+
+        <SectionCard
+          title="Approval Activity"
+          description="Pending, approved and rejected requests"
+        >
+          <ApprovalTrendChart data={approvalTrendData} isLoading={approvalsQuery.isLoading} />
+        </SectionCard>
+      </div>
+
+      {/* Charts row 2 — status donut + role bar */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <SectionCard
+          title="User Status"
+          description="Distribution across account states"
+        >
+          <DistributionChart data={statusDistData} isLoading={usersQuery.isLoading} emptyLabel="No users yet" />
+        </SectionCard>
+
+        <SectionCard
+          title="Role Distribution"
+          description="Users per role"
+        >
+          <RoleBarChart data={roleDistData} isLoading={usersQuery.isLoading} palette={ROLE_PALETTES.ADMIN} />
+        </SectionCard>
+      </div>
+
+      {/* Pending approvals + quick actions */}
       <div className="grid gap-6 xl:grid-cols-3">
         <SectionCard
-          title="Recent Activity"
-          description="Latest system events"
+          title="Pending Approvals"
           className="xl:col-span-2"
         >
           <PendingApprovalsList
@@ -108,15 +157,7 @@ export function AdminDashboard() {
           />
         </SectionCard>
 
-        <SectionCard title="Pending Approvals">
-          <PendingApprovalsList
-            requests={pendingApprovals}
-            isLoading={approvalsQuery.isLoading}
-          />
-        </SectionCard>
-      </div>
-
-      <SectionCard title="Quick Actions">
+        <SectionCard title="Quick Actions">
           <ul className="space-y-2">
             <li>
               <Link
@@ -162,6 +203,7 @@ export function AdminDashboard() {
             </li>
           </ul>
         </SectionCard>
+      </div>
     </div>
   );
 }
