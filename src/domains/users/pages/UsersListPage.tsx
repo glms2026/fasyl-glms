@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { roleColorClass } from "@/domains/users/data/roleColors";
 import { DataTable, type DataTableColumn } from "@/components/common/DataTable";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TablePagination } from "@/components/common/TablePagination";
@@ -60,7 +61,7 @@ function RoleBadges({ roles }: { roles: string[] }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
       {shown.map((role) => (
-        <Badge key={role} variant="outline">
+        <Badge key={role} className={roleColorClass(role)}>
           {titleCase(role)}
         </Badge>
       ))}

@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Activity,
   ClipboardCheck,
-  FileText,
   Shield,
   UserPlus,
   Users,
@@ -19,13 +17,7 @@ import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
 import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
 import { cn } from "@/lib/utils";
 
-import {
-  adminMetrics,
-  adminRecentActivity,
-} from "../data/roleDashboard.mock";
-import { ledgerMovement, ledgerSummary, systemChecks } from "../data/ledger.mock";
-import { LedgerMovementChart } from "./LedgerMovementChart";
-import { SystemStatusList } from "./SystemStatusList";
+
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -34,19 +26,7 @@ function greeting(): string {
   return "Good evening";
 }
 
-const actionIcons: Record<string, typeof Users> = {
-  USER_CREATE: UserPlus,
-  ASSIGN_ROLE: Shield,
-  USER_LOCK: Shield,
-  USER_ACTIVATE: ClipboardCheck,
-  LOGIN: Activity,
-};
 
-const statusColors: Record<string, string> = {
-  success: "bg-emerald-100 text-emerald-700",
-  pending: "bg-amber-100 text-amber-700",
-  failed: "bg-red-100 text-red-700",
-};
 
 export function AdminDashboard() {
   const { user } = useAuth();
@@ -91,9 +71,6 @@ export function AdminDashboard() {
           value={totalUsers}
           icon={Users}
           isLoading={usersQuery.isLoading}
-          change={adminMetrics[0].change}
-          trend={adminMetrics[0].trend}
-          caption={adminMetrics[0].caption}
         />
         <MetricCard
           label="Active Users"
@@ -101,9 +78,6 @@ export function AdminDashboard() {
           icon={Users}
           tone="success"
           isLoading={usersQuery.isLoading}
-          change={adminMetrics[1].change}
-          trend={adminMetrics[1].trend}
-          caption={adminMetrics[1].caption}
         />
         <MetricCard
           label="Pending Approvals"
@@ -111,88 +85,38 @@ export function AdminDashboard() {
           icon={ClipboardCheck}
           tone="warning"
           isLoading={approvalsQuery.isLoading}
-          change={adminMetrics[2].change}
-          trend={adminMetrics[2].trend}
-          caption={adminMetrics[2].caption}
         />
         <MetricCard
-          label="GL Accounts"
-          value={ledgerSummary.glAccounts}
-          icon={FileText}
-          change={ledgerSummary.glAccountsChange}
-          caption="added this month"
+          label="Locked Accounts"
+          value={users.filter((u) => u.status === "LOCKED").length}
+          icon={Shield}
+          tone="destructive"
+          isLoading={usersQuery.isLoading}
         />
       </section>
 
       {/* Main content — 2/3 + 1/3 */}
       <div className="grid gap-6 xl:grid-cols-3">
         <SectionCard
-          title="Ledger Movement"
-          description="Debits and credits over the last 6 months"
-          className="xl:col-span-2"
-        >
-          <LedgerMovementChart data={ledgerMovement} />
-        </SectionCard>
-
-        <div className="space-y-6">
-          <SectionCard title="Pending Approvals">
-            <PendingApprovalsList
-              requests={pendingApprovals}
-              isLoading={approvalsQuery.isLoading}
-            />
-          </SectionCard>
-
-          <SectionCard title="System Status">
-            <SystemStatusList checks={systemChecks} />
-          </SectionCard>
-        </div>
-      </div>
-
-      {/* Bottom section — recent activity */}
-      <div className="grid gap-6 xl:grid-cols-3">
-        <SectionCard
           title="Recent Activity"
           description="Latest system events"
           className="xl:col-span-2"
-          action={
-            <Link
-              to="/audit-logs"
-              className="text-sm font-medium text-indigo-600 hover:underline"
-            >
-              View all
-            </Link>
-          }
         >
-          <div className="space-y-3">
-            {adminRecentActivity.map((event) => {
-              const Icon = actionIcons[event.action] || Activity;
-              return (
-                <div
-                  key={event.id}
-                  className="flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3"
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-                    <Icon className="size-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-neutral-900">
-                      {event.action.replace(/_/g, " ")}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      by {event.user}
-                      {event.target && ` → ${event.target}`}
-                    </p>
-                  </div>
-                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusColors[event.status || "success"])}>
-                    {event.status || "success"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <PendingApprovalsList
+            requests={pendingApprovals}
+            isLoading={approvalsQuery.isLoading}
+          />
         </SectionCard>
 
-        <SectionCard title="Quick Actions">
+        <SectionCard title="Pending Approvals">
+          <PendingApprovalsList
+            requests={pendingApprovals}
+            isLoading={approvalsQuery.isLoading}
+          />
+        </SectionCard>
+      </div>
+
+      <SectionCard title="Quick Actions">
           <ul className="space-y-2">
             <li>
               <Link
@@ -238,7 +162,6 @@ export function AdminDashboard() {
             </li>
           </ul>
         </SectionCard>
-      </div>
     </div>
   );
 }

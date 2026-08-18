@@ -3,7 +3,6 @@ import {
   CheckCircle2,
   Clock,
   Hourglass,
-  TrendingUp,
   Users,
   XCircle,
 } from "lucide-react";
@@ -18,8 +17,7 @@ import { PendingApprovalsList } from "@/domains/users/components/PendingApproval
 import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
 import { cn } from "@/lib/utils";
 
-import { authorizerMetrics } from "../data/roleDashboard.mock";
-import { ledgerSummary } from "../data/ledger.mock";
+import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -31,8 +29,10 @@ function greeting(): string {
 export function AuthorizerDashboard() {
   const { user } = useAuth();
   const approvalsQuery = usePendingApprovalsQuery({ page: 0, size: 10 }, true);
+  const usersQuery = useAllUsersQuery();
 
   const pendingApprovals = approvalsQuery.data?.content ?? [];
+  const users = usersQuery.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -60,35 +60,26 @@ export function AuthorizerDashboard() {
           icon={Clock}
           tone="warning"
           isLoading={approvalsQuery.isLoading}
-          change={authorizerMetrics[0].change}
-          trend={authorizerMetrics[0].trend}
-          caption={authorizerMetrics[0].caption}
         />
         <MetricCard
-          label="Approved Today"
-          value={authorizerMetrics[1].value}
+          label="Total Users"
+          value={users.length}
+          icon={Users}
+          isLoading={usersQuery.isLoading}
+        />
+        <MetricCard
+          label="Active Users"
+          value={users.filter((u) => u.status === "ACTIVE").length}
           icon={CheckCircle2}
           tone="success"
-          change={authorizerMetrics[1].change}
-          trend={authorizerMetrics[1].trend}
-          caption={authorizerMetrics[1].caption}
+          isLoading={usersQuery.isLoading}
         />
         <MetricCard
-          label="Rejected Today"
-          value={authorizerMetrics[2].value}
+          label="Locked Accounts"
+          value={users.filter((u) => u.status === "LOCKED").length}
           icon={XCircle}
           tone="destructive"
-          change={authorizerMetrics[2].change}
-          trend={authorizerMetrics[2].trend}
-          caption={authorizerMetrics[2].caption}
-        />
-        <MetricCard
-          label="Avg Response Time"
-          value={authorizerMetrics[3].value}
-          icon={TrendingUp}
-          change={authorizerMetrics[3].change}
-          trend={authorizerMetrics[3].trend}
-          caption={authorizerMetrics[3].caption}
+          isLoading={usersQuery.isLoading}
         />
       </section>
 
@@ -112,27 +103,8 @@ export function AuthorizerDashboard() {
         />
       </SectionCard>
 
-      {/* Bottom row — GL summary + quick actions */}
-      <div className="grid gap-6 xl:grid-cols-3">
-        {/* GL summary for context */}
-        <SectionCard title="Ledger Overview">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-600">Total Assets</span>
-              <span className="text-sm font-semibold text-neutral-900">{ledgerSummary.totalAssets}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-600">GL Accounts</span>
-              <span className="text-sm font-semibold text-neutral-900">{ledgerSummary.glAccounts}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-600">Journal Entries</span>
-              <span className="text-sm font-semibold text-neutral-900">{ledgerSummary.journalEntries}</span>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Quick Actions">
+      {/* Bottom row — quick actions + recent approvals */}
+      <SectionCard title="Quick Actions">
           <ul className="space-y-2">
             <li>
               <Link
@@ -165,35 +137,7 @@ export function AuthorizerDashboard() {
           </ul>
         </SectionCard>
 
-        <SectionCard title="Recent Approvals">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-              <CheckCircle2 className="size-4 text-emerald-600" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-neutral-900">USER_CREATE</p>
-                <p className="text-xs text-neutral-500">jdoe approved by you</p>
-              </div>
-              <span className="text-xs text-neutral-400">2h ago</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-              <CheckCircle2 className="size-4 text-emerald-600" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-neutral-900">USER_LOCK</p>
-                <p className="text-xs text-neutral-500">testuser approved by you</p>
-              </div>
-              <span className="text-xs text-neutral-400">5h ago</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border border-red-100 bg-red-50 p-3">
-              <XCircle className="size-4 text-red-600" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-neutral-900">ASSIGN_ROLE</p>
-                <p className="text-xs text-neutral-500">invaliduser rejected by you</p>
-              </div>
-              <span className="text-xs text-neutral-400">1d ago</span>
-            </div>
-          </div>
-        </SectionCard>
-      </div>
+
     </div>
   );
 }

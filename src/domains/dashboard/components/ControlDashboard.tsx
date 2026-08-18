@@ -5,7 +5,6 @@ import {
   Clock,
   KeyRound,
   Lock,
-  Plus,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -18,11 +17,8 @@ import { SectionCard } from "@/components/common/SectionCard";
 import { useAuth } from "@/domains/auth/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
-import {
-  controlMetrics,
-  controlRecentUsers,
-} from "../data/roleDashboard.mock";
-import { ledgerSummary } from "../data/ledger.mock";
+import { useAllUsersQuery } from "@/domains/users/hooks/useUsers";
+import { usePendingApprovalsQuery } from "@/domains/users/hooks/useApprovals";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -40,6 +36,14 @@ const statusBadge: Record<string, { className: string; icon: typeof CheckCircle2
 
 export function ControlDashboard() {
   const { user } = useAuth();
+  const usersQuery = useAllUsersQuery();
+  const approvalsQuery = usePendingApprovalsQuery({ page: 0, size: 10 }, true);
+
+  const users = usersQuery.data ?? [];
+  const pendingApprovals = approvalsQuery.data?.content ?? [];
+  const lockedUsers = users.filter((u) => u.status === "LOCKED");
+  const suspendedUsers = users.filter((u) => u.status === "SUSPENDED");
+  const recentUsers = users.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -62,39 +66,31 @@ export function ControlDashboard() {
       {/* Metrics row — 4 cards with sky gradient */}
       <section aria-label="Key metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Users Created"
-          value={controlMetrics[0].value}
+          label="Total Users"
+          value={users.length}
           icon={UserPlus}
-          change={controlMetrics[0].change}
-          trend={controlMetrics[0].trend}
-          caption={controlMetrics[0].caption}
+          isLoading={usersQuery.isLoading}
         />
         <MetricCard
           label="Pending Approvals"
-          value={controlMetrics[1].value}
+          value={pendingApprovals.length}
           icon={Clock}
           tone="warning"
-          change={controlMetrics[1].change}
-          trend={controlMetrics[1].trend}
-          caption={controlMetrics[1].caption}
+          isLoading={approvalsQuery.isLoading}
         />
         <MetricCard
           label="Locked Accounts"
-          value={controlMetrics[2].value}
+          value={lockedUsers.length}
           icon={Lock}
           tone="destructive"
-          change={controlMetrics[2].change}
-          trend={controlMetrics[2].trend}
-          caption={controlMetrics[2].caption}
+          isLoading={usersQuery.isLoading}
         />
         <MetricCard
           label="Suspended Accounts"
-          value={controlMetrics[3].value}
+          value={suspendedUsers.length}
           icon={AlertTriangle}
           tone="warning"
-          change={controlMetrics[3].change}
-          trend={controlMetrics[3].trend}
-          caption={controlMetrics[3].caption}
+          isLoading={usersQuery.isLoading}
         />
       </section>
 
@@ -125,14 +121,14 @@ export function ControlDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {controlRecentUsers.map((u) => {
+                {recentUsers.map((u) => {
                   const badge = statusBadge[u.status] || statusBadge.ACTIVE;
                   const BadgeIcon = badge.icon;
                   return (
                     <tr key={u.id} className="hover:bg-sky-50/50">
                       <td className="py-3 pr-4">
                         <div>
-                          <p className="text-sm font-medium text-neutral-900">{u.fullName}</p>
+                          <p className="text-sm font-medium text-neutral-900">{u.firstName} {u.lastName}</p>
                           <p className="text-xs text-neutral-500">{u.email}</p>
                         </div>
                       </td>
@@ -207,24 +203,22 @@ export function ControlDashboard() {
             </ul>
           </SectionCard>
 
-          {/* GL summary for context */}
-          <SectionCard title="Ledger Overview">
+          {/* Pending approvals summary */}
+          <SectionCard title="Pending Approvals">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600">Total Assets</span>
-                <span className="text-sm font-semibold text-neutral-900">{ledgerSummary.totalAssets}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-600">GL Accounts</span>
-                <span className="text-sm font-semibold text-neutral-900">{ledgerSummary.glAccounts}</span>
-              </div>
-              <Link
-                to="/create-gl"
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-sky-200 p-2 text-sm font-medium text-sky-600 transition-colors hover:bg-sky-50"
-              >
-                <Plus className="size-4" />
-                Create GL Account
-              </Link>
+              {pendingApprovals.slice(0, 3).map((approval) => (
+                <div key={approval.id} className="flex items-center gap-3 rounded-lg border border-sky-100 bg-sky-50 p-3">
+                  <Clock className="size-4 text-sky-600" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-neutral-900">{approval.action.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-neutral-500">by {approval.makerUsername}</p>
+                  </div>
+                  <span className="text-xs text-neutral-400">{approval.createdAt ? new Date(approval.createdAt).toLocaleDateString() : "N/A"}</span>
+                </div>
+              ))}
+              {pendingApprovals.length === 0 && (
+                <p className="text-sm text-neutral-500">No pending approvals</p>
+              )}
             </div>
           </SectionCard>
         </div>
