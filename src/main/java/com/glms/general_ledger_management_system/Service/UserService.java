@@ -660,64 +660,10 @@ public class UserService {
 
     /**
      * ============================================================
-     * DELETE USER
-     * ============================================================
-     *
-     * Soft delete.
-     */
-    public void deleteUser(
-            Long id
-    ) {
-
-        User user =
-                findUser(id);
-
-        preventAdminModification(user);
-
-        if (user.getStatus()
-                == UserStatus.INACTIVE) {
-
-            throw new IllegalStateException(
-                    "This account is already inactive - nothing to do here."
-            );
-        }
-
-        user.setStatus(
-                UserStatus.INACTIVE
-        );
-
-        user.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        userRepository.save(user);
-
-        /*
-         * Revoke JWT tokens.
-         */
-        revokeUserTokens(user);
-
-        /*
-         * Revoke refresh tokens.
-         */
-        refreshTokenService
-                .revokeAllUserTokens(
-                        user.getId()
-                );
-
-        createAuditLog(
-                getCurrentUsername(),
-                "DELETE_USER",
-                "Deleted user: "
-                        + user.getUsername()
-        );
-    }
-
-
-    /**
-     * ============================================================
      * ACTIVATE USER
      * ============================================================
+     *
+     * ADMIN-only direct operation.
      */
     public void activateUser(
             Long id
@@ -731,6 +677,14 @@ public class UserService {
 
             throw new IllegalStateException(
                     "Good news - this account is already active, so there's nothing to do."
+            );
+        }
+
+        if (user.getStatus()
+                == UserStatus.DELETED) {
+
+            throw new IllegalStateException(
+                    "This account has been permanently deleted and cannot be reactivated."
             );
         }
 

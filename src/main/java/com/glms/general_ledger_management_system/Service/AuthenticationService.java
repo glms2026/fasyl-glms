@@ -318,6 +318,28 @@ public class AuthenticationService {
 
 
         /*
+         * DELETED
+         */
+        if (UserStatus.DELETED.equals(status)) {
+
+            throw new IllegalStateException(
+                    "This account has been deleted. Please contact your administrator if you believe this is a mistake."
+            );
+        }
+
+
+        /*
+         * REJECTED
+         */
+        if (UserStatus.REJECTED.equals(status)) {
+
+            throw new IllegalStateException(
+                    "Your account was not approved. Please contact your administrator for assistance."
+            );
+        }
+
+
+        /*
          * INACTIVE
          */
         if (UserStatus.INACTIVE.equals(status)) {
@@ -1054,6 +1076,12 @@ public class AuthenticationService {
                                 user.getStatus()
                         )
                                 || UserStatus.SUSPENDED.equals(
+                                user.getStatus()
+                        )
+                                || UserStatus.DELETED.equals(
+                                user.getStatus()
+                        )
+                                || UserStatus.REJECTED.equals(
                                 user.getStatus()
                         )
                 )

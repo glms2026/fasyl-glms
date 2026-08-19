@@ -9,9 +9,10 @@ public enum UserApprovalAction {
 
     USER_READ,
 
-    USER_DEACTIVATE,    USER_SUSPEND,
+    USER_DEACTIVATE,
+    USER_SUSPEND,
     USER_LOCK,
-
+    USER_DELETE,
     USER_UNSUSPEND,
 
     ROLE_ASSIGN_PERMISSION,

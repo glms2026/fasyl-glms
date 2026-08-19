@@ -388,25 +388,38 @@ public class UserController {
      * DELETE USER
      * ============================================================
      *
-     * ADMIN-only direct operation.
+     * MAKER operation.
+     *
+     * Creates a USER_DELETE approval request.
+     * The account is soft-deleted (status → DELETED)
+     * only after an AUTHORIZER or ADMIN approves it.
      */
     @DeleteMapping("/{id}")
     @PreAuthorize(
-            "hasRole('ADMIN')"
+            "hasAnyRole('CONTROL', 'ADMIN')"
     )
     @Operation(
             summary = "Delete user",
-            description = "Soft deletes/deactivates a user account (ADMIN only)"
+            description = "Creates a USER_DELETE approval request. The user is soft-deleted after approval."
     )
-    public ResponseEntity<Void> deleteUser(
-            @PathVariable Long id
+    public ResponseEntity<UserApprovalRequestResponse> deleteUser(
+            @PathVariable Long id,
+
+            @Valid
+            @RequestBody
+            UserActionRequest actionRequest
     ) {
 
-        userService.deleteUser(id);
+        UserApprovalRequest request =
+                approvalRequestService.createApprovalRequest(
+                        id,
+                        UserApprovalAction.USER_DELETE,
+                        actionRequest.getReason()
+                );
 
         return ResponseEntity
-                .noContent()
-                .build();
+                .status(HttpStatus.ACCEPTED)
+                .body(toResponse(request));
     }
 
 

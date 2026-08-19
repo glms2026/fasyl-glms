@@ -201,6 +201,7 @@ public class PermissionInitializer {
                         "USER_CREATE",
                         "USER_UPDATE",
                         "USER_DEACTIVATE",
+                        "USER_DELETE",
                         "USER_SUSPEND",
                         "USER_LOCK",
                         "USER_UNSUSPEND",

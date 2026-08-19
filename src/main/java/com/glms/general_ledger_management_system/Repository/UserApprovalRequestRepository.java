@@ -162,4 +162,17 @@ public interface UserApprovalRequestRepository
             Long authorizerId,
             Pageable pageable
     );
+
+
+    /**
+     * FIND ALL PENDING REQUESTS FOR A USER
+     *
+     * Used when deleting a user to cancel
+     * all their pending requests.
+     */
+    List<UserApprovalRequest>
+    findByUserAndStatus(
+            User user,
+            ApprovalStatus status
+    );
 }

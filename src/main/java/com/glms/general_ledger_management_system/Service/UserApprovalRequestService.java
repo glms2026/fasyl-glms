@@ -1301,10 +1301,32 @@ public class UserApprovalRequestService {
 
 
         /*
-         * IMPORTANT:
-         *
-         * No user-management action is executed here.
+         * If this is a USER_CREATE request, mark the
+         * target user as REJECTED so they no longer
+         * appear as pending/INACTIVE.
          */
+        if (request.getActionType()
+                == UserApprovalAction.USER_CREATE
+                && request.getUser() != null) {
+
+            User targetUser = request.getUser();
+
+            if (targetUser.getStatus()
+                    == UserStatus.INACTIVE) {
+
+                targetUser.setStatus(
+                        UserStatus.REJECTED
+                );
+
+                targetUser.setUpdatedAt(
+                        LocalDateTime.now()
+                );
+
+                userRepository.save(targetUser);
+            }
+        }
+
+
         UserApprovalRequest savedRequest =
                 approvalRequestRepository.save(
                         request
@@ -1877,6 +1899,53 @@ public class UserApprovalRequestService {
 
             /*
              * ====================================================
+             * DELETE USER
+             * ====================================================
+             *
+             * Soft-delete: status → DELETED.
+             * All tokens revoked, all pending requests
+             * for this user cancelled.
+             */
+            case USER_DELETE -> {
+
+                if (user.getStatus()
+                        == UserStatus.DELETED) {
+
+                    throw new IllegalStateException(
+                            "This account has already been deleted."
+                    );
+                }
+
+
+                user.setStatus(
+                        UserStatus.DELETED
+                );
+
+                user.setUpdatedAt(
+                        LocalDateTime.now()
+                );
+
+
+                /*
+                 * Immediately revoke authentication.
+                 */
+                revokeUserAuthentication(
+                        user
+                );
+
+
+                /*
+                 * Cancel all other pending requests
+                 * for this user.
+                 */
+                cancelPendingRequestsForUser(
+                        user
+                );
+            }
+
+
+            /*
+             * ====================================================
              * UNSUPPORTED ACTION
              * ====================================================
              *
@@ -2269,6 +2338,7 @@ public class UserApprovalRequestService {
 
                     case "ACTIVATE_USER",
                          "USER_DEACTIVATE",
+                         "USER_DELETE",
                          "USER_SUSPEND",
                          "USER_UNSUSPEND",
                          "USER_LOCK",
@@ -2314,6 +2384,28 @@ public class UserApprovalRequestService {
 
             throw new IllegalArgumentException(
                     "Please specify the approval action."
+            );
+        }
+
+
+        /*
+         * DELETED users cannot be acted upon.
+         */
+        if (user.getStatus() == UserStatus.DELETED) {
+
+            throw new IllegalStateException(
+                    "This account has been permanently deleted and can no longer be modified."
+            );
+        }
+
+
+        /*
+         * REJECTED users cannot be acted upon.
+         */
+        if (user.getStatus() == UserStatus.REJECTED) {
+
+            throw new IllegalStateException(
+                    "This account was not approved and can no longer be modified through this workflow."
             );
         }
 
@@ -2367,6 +2459,34 @@ public class UserApprovalRequestService {
 
                     throw new IllegalStateException(
                             "This account is already inactive - nothing to do here."
+                    );
+                }
+            }
+
+
+            case USER_DELETE -> {
+
+                if (user.getStatus()
+                        == UserStatus.DELETED) {
+
+                    throw new IllegalStateException(
+                            "This account has already been deleted."
+                    );
+                }
+
+                if (user.getStatus()
+                        == UserStatus.LOCKED) {
+
+                    throw new IllegalStateException(
+                            "This account is locked - it needs to be unlocked before it can be deleted."
+                    );
+                }
+
+                if (user.getStatus()
+                        == UserStatus.SUSPENDED) {
+
+                    throw new IllegalStateException(
+                            "This account is suspended - it needs to be unsuspended before it can be deleted."
                     );
                 }
             }
@@ -2819,6 +2939,41 @@ public class UserApprovalRequestService {
                 .revokeAllUserTokens(
                         user.getId()
                 );
+    }
+
+
+    /**
+     * ============================================================
+     * CANCEL PENDING REQUESTS FOR USER
+     * ============================================================
+     *
+     * When a user is deleted, all their pending
+     * approval requests are automatically cancelled
+     * so they no longer appear in queues.
+     */
+    private void cancelPendingRequestsForUser(
+            User user
+    ) {
+
+        List<UserApprovalRequest> pendingRequests =
+                approvalRequestRepository
+                        .findByUserAndStatus(
+                                user,
+                                ApprovalStatus.PENDING
+                        );
+
+        for (UserApprovalRequest pending : pendingRequests) {
+
+            pending.setStatus(
+                    ApprovalStatus.CANCELLED
+            );
+
+            pending.setAuthorizerRemark(
+                    "Cancelled — user account was deleted"
+            );
+
+            approvalRequestRepository.save(pending);
+        }
     }
 
 
