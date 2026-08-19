@@ -35,6 +35,10 @@ function statusRowClasses(status: string) {
       return "border-l-[3px] border-l-amber-400 bg-gradient-to-r from-amber-100/60 via-white to-amber-100/60 hover:from-amber-200/50 hover:to-amber-200/50";
     case "LOCKED":
       return "border-l-[3px] border-l-red-400 bg-gradient-to-r from-red-100/60 via-white to-red-100/60 hover:from-red-200/50 hover:to-red-200/50";
+    case "REJECTED":
+      return "border-l-[3px] border-l-rose-500 bg-gradient-to-r from-rose-100/60 via-white to-rose-100/60 hover:from-rose-200/50 hover:to-rose-200/50";
+    case "DELETED":
+      return "border-l-[3px] border-l-neutral-500 bg-gradient-to-r from-neutral-100/60 via-white to-neutral-100/60 hover:from-neutral-200/50 hover:to-neutral-200/50 opacity-60";
     default:
       return "border-l-[3px] border-l-neutral-300 bg-gradient-to-r from-slate-200/50 via-white to-slate-200/50 hover:from-slate-300/40 hover:to-slate-300/40";
   }
@@ -49,6 +53,10 @@ function statusAvatarRing(status: string) {
       return "ring-2 ring-amber-300/70";
     case "LOCKED":
       return "ring-2 ring-red-300/70";
+    case "REJECTED":
+      return "ring-2 ring-rose-300/70";
+    case "DELETED":
+      return "ring-2 ring-neutral-400/70";
     default:
       return "ring-2 ring-neutral-300/70";
   }
@@ -210,7 +218,7 @@ export default function UsersListPage() {
       id: "status",
       header: "Status",
       sortField: "status",
-      cell: (user) => <UserStatusBadge status={user.status} />,
+      cell: (user) => <UserStatusBadge status={user.status} rejectionReason={user.rejectionReason} />,
     },
     {
       id: "createdAt",

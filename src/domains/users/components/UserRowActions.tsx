@@ -62,15 +62,19 @@ export function UserRowActions({
 
   const credentials = getCreatedCredentials(user.id);
 
-  // When the user's creation request was rejected the account sits in
-  // INACTIVE state — credentials, edits and role assignment make no sense
-  // for an unapproved user, so we suppress those actions entirely.
-  const isRejected = status === "INACTIVE";
+  // Rejected users cannot be modified or have credentials delivered.
+  const isRejected = status === "REJECTED";
+  // Deleted users are immutable.
+  const isDeleted = status === "DELETED";
+  // Pending/inactive users awaiting approval.
+  const isInactive = status === "INACTIVE";
+  // Any terminal or immutable state.
+  const isImmutable = isRejected || isDeleted || isInactive;
 
   // Temporary login credentials are a CONTROL-privilege: only users holding
   // the CONTROL role may email them (admins and authorizers see no such
   // action, even though they may manage the same accounts).
-  const canEmailCredentials = Boolean(credentials) && access.isControl && !isRejected;
+  const canEmailCredentials = Boolean(credentials) && access.isControl && !isImmutable;
 
   // The drafted email is shown in a confirmation dialog before anything
   // opens, so the CONTROL user can verify the recipient and the temporary
@@ -160,7 +164,7 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          {access.canMakeChanges && !isRejected && (
+          {access.canMakeChanges && !isImmutable && (
             <DropdownMenuItem
               icon={<SquarePen />}
               onClick={() => {
@@ -172,7 +176,7 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          {access.canMakeChanges && !isRejected && (
+          {access.canMakeChanges && !isImmutable && (
             <DropdownMenuItem
               icon={<ShieldPlus />}
               onClick={() => {
@@ -184,7 +188,7 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          {access.canAdminDirect && (
+          {access.canMakeChanges && !isImmutable && (
             <DropdownMenuItem
               icon={<Trash2 />}
               variant="destructive"

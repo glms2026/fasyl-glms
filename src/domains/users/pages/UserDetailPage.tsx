@@ -75,6 +75,12 @@ export default function UserDetailPage() {
   const status = user.status;
   const roleList = user.roles;
 
+  // Terminal states where user cannot be modified.
+  const isRejected = status === "REJECTED";
+  const isDeleted = status === "DELETED";
+  const isInactive = status === "INACTIVE";
+  const isImmutable = isRejected || isDeleted || isInactive;
+
   const accessActions = (
     <>
       {status === "ACTIVE" && access.canMakeChanges && (
@@ -121,7 +127,7 @@ export default function UserDetailPage() {
         </>
       )}
 
-      {(status === "INACTIVE" || status === "PASSWORD_EXPIRED") &&
+      {(isRejected || isInactive || status === "PASSWORD_EXPIRED") &&
         access.canAdminDirect && (
           <Button size="lg" className={heroButtonClass} onClick={() => actions.openActivate(user)}>
             <PlayCircle className="size-4" />
@@ -149,7 +155,7 @@ export default function UserDetailPage() {
           <>
             {accessActions}
 
-            {access.canMakeChanges && status !== "INACTIVE" && (
+            {access.canMakeChanges && !isImmutable && (
               <Button
                 size="lg"
                 className={heroGhostButtonClass}
@@ -160,7 +166,7 @@ export default function UserDetailPage() {
               </Button>
             )}
 
-            {access.canAdminDirect && (
+            {access.canMakeChanges && !isDeleted && (
               <Button
                 size="lg"
                 className={heroGhostButtonClass}
@@ -171,7 +177,7 @@ export default function UserDetailPage() {
               </Button>
             )}
 
-            {access.canMakeChanges && status !== "INACTIVE" && (
+            {access.canMakeChanges && !isImmutable && (
               <Link to={`/users/${user.id}/edit`} className={heroButtonClass}>
                 <SquarePen className="size-4" />
                 Edit
@@ -193,7 +199,7 @@ export default function UserDetailPage() {
               <p className="text-sm text-neutral-500">{user.email}</p>
             </div>
 
-            <UserStatusBadge status={user.status} />
+            <UserStatusBadge status={user.status} rejectionReason={user.rejectionReason} />
           </div>
 
           <dl className="divide-y divide-neutral-100 border-t border-neutral-100">
@@ -250,6 +256,10 @@ export default function UserDetailPage() {
 
             {user.suspendedBy && (
               <DetailRow label="Suspended by" value={user.suspendedBy} />
+            )}
+
+            {isRejected && user.rejectionReason && (
+              <DetailRow label="Rejection reason" value={user.rejectionReason} />
             )}
           </dl>
         </SectionCard>

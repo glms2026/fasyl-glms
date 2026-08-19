@@ -114,10 +114,10 @@ export function useUnsuspendUser({ onSuccess, onError }: MutationCallbacks<unkno
   );
 }
 
-/** DELETE /api/users/{id} — ADMIN-only, soft delete, immediate. */
-export function useDeleteUser({ onSuccess, onError }: MutationCallbacks<void> = {}) {
-  return useApiMutation<number, void>(
-    (id) => userService.deleteUser(id),
+/** DELETE /api/users/{id} — Maker/Checker. Requires a reason. */
+export function useDeleteUser({ onSuccess, onError }: MutationCallbacks<unknown> = {}) {
+  return useApiMutation<{ id: number; reason: string }, unknown>(
+    ({ id, reason }) => userService.deleteUser(id, { reason } satisfies UserActionRequest),
     { invalidates: [userQueryKeys.all], onSuccess, onError },
   );
 }

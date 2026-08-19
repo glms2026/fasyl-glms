@@ -135,8 +135,16 @@ export const userService = {
     return response.data;
   },
 
-  /** DELETE /api/users/{id} — ADMIN-only, soft delete, immediate. */
-  async deleteUser(id: number): Promise<void> {
-    await apiClient.delete(`/users/${id}`);
+  /** DELETE /api/users/{id} — Maker/Checker. Requires a reason; soft-deletes after approval. */
+  async deleteUser(
+    id: number,
+    payload: UserActionRequest,
+  ): Promise<UserApprovalRequest> {
+    const response = await apiClient.delete<UserApprovalRequest>(
+      `/users/${id}`,
+      { data: payload },
+    );
+
+    return response.data;
   },
 };

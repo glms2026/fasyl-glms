@@ -86,7 +86,7 @@ export function useUserActions() {
 
   const deleteUser = useDeleteUser({
     onSuccess: () => {
-      toast.success("Account deleted.");
+      toast.success("Delete request submitted for approval.");
       close();
     },
   });
@@ -202,23 +202,23 @@ export function useUserActions() {
         error={activate.error}
       />
 
-      <ConfirmDialog
+      <ReasonDialog
         open={target?.kind === "delete"}
-        onClose={close}
-        onConfirm={() => {
-          if (!target) return;
-          deleteUser.mutate(target.user.id);
-        }}
         title="Delete user?"
         description={
           target
-            ? `${userFullName(target.user)} will be removed immediately. This is an ADMIN action and can't be undone.`
+            ? `${userFullName(target.user)} will be soft-deleted after an authorizer approves this request. All pending approval requests for this user will be automatically cancelled.`
             : undefined
         }
-        confirmLabel="Delete user"
+        confirmLabel="Submit delete request"
         tone="destructive"
+        onClose={close}
         isPending={deleteUser.isPending}
         error={deleteUser.error}
+        onConfirm={(reason) => {
+          if (!target) return;
+          deleteUser.mutate({ id: target.user.id, reason });
+        }}
       />
     </>
   );

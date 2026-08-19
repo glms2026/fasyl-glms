@@ -13,6 +13,8 @@ export const UserStatus = {
   LOCKED: "LOCKED",
   SUSPENDED: "SUSPENDED",
   PASSWORD_EXPIRED: "PASSWORD_EXPIRED",
+  REJECTED: "REJECTED",
+  DELETED: "DELETED",
 } as const;
 
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
@@ -50,6 +52,8 @@ export interface ManagedUser {
   lockReason: string | null;
   /** When a temporary lock expires; null for locks without a duration. */
   lockedUntil: string | null;
+  /** The remark/reason given when a creation request was rejected. */
+  rejectionReason: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -135,6 +139,7 @@ export const ApprovalAction = {
   ASSIGN_ROLE: "ASSIGN_ROLE",
   ASSIGN_PERMISSION: "ASSIGN_PERMISSION",
   REMOVE_PERMISSION: "REMOVE_PERMISSION",
+  USER_DELETE: "USER_DELETE",
 } as const;
 
 export type ApprovalActionType =
