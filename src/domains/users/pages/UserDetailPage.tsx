@@ -149,7 +149,7 @@ export default function UserDetailPage() {
           <>
             {accessActions}
 
-            {access.canMakeChanges && (
+            {access.canMakeChanges && status !== "INACTIVE" && (
               <Button
                 size="lg"
                 className={heroGhostButtonClass}
@@ -171,7 +171,7 @@ export default function UserDetailPage() {
               </Button>
             )}
 
-            {access.canMakeChanges && (
+            {access.canMakeChanges && status !== "INACTIVE" && (
               <Link to={`/users/${user.id}/edit`} className={heroButtonClass}>
                 <SquarePen className="size-4" />
                 Edit

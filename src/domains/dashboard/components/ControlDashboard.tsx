@@ -43,6 +43,7 @@ const statusBadge: Record<string, { className: string; icon: typeof CheckCircle2
   PENDING: { className: "bg-amber-100 text-amber-700", icon: Clock },
   LOCKED: { className: "bg-red-100 text-red-700", icon: Lock },
   SUSPENDED: { className: "bg-orange-100 text-orange-700", icon: AlertTriangle },
+  INACTIVE: { className: "bg-slate-100 text-slate-700", icon: Clock },
 };
 
 export function ControlDashboard() {

@@ -62,10 +62,15 @@ export function UserRowActions({
 
   const credentials = getCreatedCredentials(user.id);
 
+  // When the user's creation request was rejected the account sits in
+  // INACTIVE state — credentials, edits and role assignment make no sense
+  // for an unapproved user, so we suppress those actions entirely.
+  const isRejected = status === "INACTIVE";
+
   // Temporary login credentials are a CONTROL-privilege: only users holding
   // the CONTROL role may email them (admins and authorizers see no such
   // action, even though they may manage the same accounts).
-  const canEmailCredentials = Boolean(credentials) && access.isControl;
+  const canEmailCredentials = Boolean(credentials) && access.isControl && !isRejected;
 
   // The drafted email is shown in a confirmation dialog before anything
   // opens, so the CONTROL user can verify the recipient and the temporary
@@ -155,7 +160,7 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          {access.canMakeChanges && (
+          {access.canMakeChanges && !isRejected && (
             <DropdownMenuItem
               icon={<SquarePen />}
               onClick={() => {
@@ -167,7 +172,7 @@ export function UserRowActions({
             </DropdownMenuItem>
           )}
 
-          {access.canMakeChanges && (
+          {access.canMakeChanges && !isRejected && (
             <DropdownMenuItem
               icon={<ShieldPlus />}
               onClick={() => {

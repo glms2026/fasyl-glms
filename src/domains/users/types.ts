@@ -17,6 +17,18 @@ export const UserStatus = {
 
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
 
+/**
+ * Maps raw backend status strings to their display-friendly labels.
+ * Extend this map when the backend status value doesn't match the
+ * desired UI label.
+ */
+export const statusDisplayLabel: Record<string, string> = {};
+
+/** Returns the display label for a status, falling back to titleCased raw value. */
+export function displayStatusLabel(status: string): string {
+  return statusDisplayLabel[status] ?? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
 /** GET /api/users/{id} → 200 — a single user as the backend returns it. */
 export interface ManagedUser {
   id: number;
