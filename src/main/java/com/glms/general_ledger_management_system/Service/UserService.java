@@ -1067,6 +1067,8 @@ public class UserService {
 
         user.setLockReason(null);
 
+        user.setLockDurationMinutes(null);
+
         user.setUpdatedAt(
                 LocalDateTime.now()
         );

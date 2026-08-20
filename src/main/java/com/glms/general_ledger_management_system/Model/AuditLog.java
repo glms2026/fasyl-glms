@@ -19,7 +19,13 @@ public class AuditLog {
 
     @Id
     @GeneratedValue(
-            strategy = GenerationType.SEQUENCE
+            strategy = GenerationType.SEQUENCE,
+            generator = "audit_log_seq"
+    )
+    @SequenceGenerator(
+            name = "audit_log_seq",
+            sequenceName = "AUDIT_LOG_SEQ",
+            allocationSize = 1
     )
     private Long id;
 
