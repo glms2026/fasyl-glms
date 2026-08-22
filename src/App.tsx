@@ -23,7 +23,9 @@ import ResetPasswordPage from "@/domains/auth/pages/ResetPasswordPage";
 const DashboardPage = lazy(
   () => import("@/domains/dashboard/pages/DashboardPage"),
 );
+const GlDashboardPage = lazy(() => import("@/domains/gl/pages/GlDashboardPage"));
 const CreateGlPage = lazy(() => import("@/domains/gl/pages/CreateGlPage"));
+const GlEntriesPage = lazy(() => import("@/domains/gl/pages/GlEntriesPage"));
 const UsersOverviewPage = lazy(
   () => import("@/domains/users/pages/UsersOverviewPage"),
 );
@@ -79,7 +81,9 @@ export default function App() {
             <Route element={<MustChangePassword />}>
               <Route element={<AppShell />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/create-gl" element={<CreateGlPage />} />
+                <Route path="/gl" element={<GlDashboardPage />} />
+                <Route path="/gl/create" element={<CreateGlPage />} />
+                <Route path="/gl/entries" element={<GlEntriesPage />} />
 
                 <Route path="/users" element={<UsersOverviewPage />} />
                 <Route path="/users/list" element={<UsersListPage />} />

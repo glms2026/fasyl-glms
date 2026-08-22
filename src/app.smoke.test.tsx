@@ -179,7 +179,7 @@ describe("app smoke", () => {
       { timeout: 5000 },
     );
 
-    // Scoped to the sidebar: "Create GL" also appears as a page action.
+    // Scoped to the sidebar: "General Ledger" also appears as a page action.
     const sidebar = screen.getByRole("navigation", { name: /main/i });
     const links = Array.from(sidebar.querySelectorAll("a")).map(
       (link) => link.textContent,
@@ -187,7 +187,7 @@ describe("app smoke", () => {
 
     expect(links).toEqual([
       "Dashboard",
-      "Create GL",
+      "General Ledger",
       "User Management",
       "Approvals",
       "Roles & Permissions",
@@ -358,7 +358,7 @@ describe("app smoke", () => {
         (link) => link.textContent,
       );
 
-      expect(labels).toEqual(["Dashboard", "Create GL", "Settings"]);
+      expect(labels).toEqual(["Dashboard", "General Ledger", "Settings"]);
       expect(labels).not.toContain("User Management");
       expect(labels).not.toContain("Approvals");
       expect(labels).not.toContain("Roles & Permissions");
@@ -402,7 +402,7 @@ describe("app smoke", () => {
       );
 
       expect(labels).toEqual(["Dashboard", "User Management", "Approvals", "Settings"]);
-      expect(labels).not.toContain("Create GL");
+      expect(labels).not.toContain("General Ledger");
       expect(labels).not.toContain("Roles & Permissions");
       expect(labels).not.toContain("Audit Logs");
     } finally {

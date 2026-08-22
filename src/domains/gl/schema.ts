@@ -1,46 +1,33 @@
 import { z } from "zod";
 
-import { GlAccountCategory, GlAccountType } from "./types";
-
-const typeValues = Object.values(GlAccountType) as [string, ...string[]];
-const categoryValues = Object.values(GlAccountCategory) as [string, ...string[]];
-
 export const createGlSchema = z.object({
-  accountName: z
-    .string()
-    .trim()
-    .min(3, "Give the account a recognisable name")
-    .max(80, "Keep the name under 80 characters"),
-
+  /** GL_CODE — 1-9 characters, not null. */
   accountCode: z
     .string()
     .trim()
-    .regex(/^\d{4,10}$/, "Use 4 to 10 digits, e.g. 100201"),
+    .min(1, "GL Code is required")
+    .max(9, "GL Code must be 9 characters or fewer"),
 
-  accountType: z.enum(typeValues, { message: "Choose an account type" }),
-
-  category: z.enum(categoryValues, { message: "Choose a category" }),
-
-  currency: z
+  /** GL_DESC — max 150 characters. */
+  accountName: z
     .string()
     .trim()
-    .length(3, "Use a 3-letter ISO code, e.g. NGN")
-    .transform((value) => value.toUpperCase()),
+    .min(1, "GL Description is required")
+    .max(150, "GL Description must be 150 characters or fewer"),
 
-  parentAccountCode: z
+  /** GL_TYPE — max 30 characters. */
+  accountType: z
     .string()
     .trim()
-    .regex(/^\d{4,10}$/, "Use 4 to 10 digits")
-    .optional()
-    .or(z.literal("")),
+    .min(1, "GL Type is required")
+    .max(30, "GL Type must be 30 characters or fewer"),
 
-  description: z
+  /** LEAF — "Y" or "N". */
+  leaf: z
     .string()
     .trim()
-    .max(240, "Keep the description under 240 characters")
-    .optional(),
-
-  postingAllowed: z.boolean(),
+    .min(1, "Leaf status is required")
+    .max(1, "Must be Y or N"),
 });
 
 export type CreateGlFormValues = z.input<typeof createGlSchema>;

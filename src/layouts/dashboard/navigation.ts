@@ -1,7 +1,7 @@
 import {
+  BookOpen,
   ClipboardCheck,
   LayoutDashboard,
-  Plus,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -33,9 +33,10 @@ export const primaryNavigation: NavigationItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: "Create GL",
-    href: "/create-gl",
-    icon: Plus,
+    title: "General Ledger",
+    href: "/gl",
+    icon: BookOpen,
+    matchNested: true,
     allowedRoles: ["ADMIN", "CREATOR"],
   },
   {
