@@ -848,12 +848,12 @@ describe("app smoke", () => {
       const dialog = await screen.findByRole("dialog");
       expect(dialog.textContent).toContain("To: user2@fasyl.com");
       expect(dialog.textContent).toContain(
-        "Subject: Your GLMS login credentials",
+        "Subject: Your MIS login credentials",
       );
       expect(dialog.textContent).toContain("Dear First2 Last2,");
       expect(dialog.textContent).toContain("Login Username: user2");
       expect(dialog.textContent).toContain("Temporary Password: Temp@1234");
-      expect(dialog.textContent).toContain("GLMS Login URL: ");
+      expect(dialog.textContent).toContain("MIS Login URL: ");
       expect(dialog.textContent).toContain("/login");
       expect(dialog.textContent).toContain("Regards,\naokonkwo");
       expect(openSpy).not.toHaveBeenCalled();
@@ -871,7 +871,7 @@ describe("app smoke", () => {
         true,
       );
       expect(url).toContain(`to=${encodeURIComponent("user2@fasyl.com")}`);
-      expect(url).toContain(`su=${encodeURIComponent("Your GLMS login credentials")}`);
+      expect(url).toContain(`su=${encodeURIComponent("Your MIS login credentials")}`);
 
       // The seeded plaintext password travels only inside the body.
       const body = decodeURIComponent(
@@ -880,7 +880,7 @@ describe("app smoke", () => {
       expect(body).toContain("Dear First2 Last2,");
       expect(body).toContain("Login Username: user2");
       expect(body).toContain("Temporary Password: Temp@1234");
-      expect(body).toContain("GLMS Login URL: ");
+      expect(body).toContain("MIS Login URL: ");
       expect(body).toContain("/login");
       expect(body).toContain("Regards,\naokonkwo");
     } finally {

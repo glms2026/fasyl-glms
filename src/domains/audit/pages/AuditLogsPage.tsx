@@ -219,7 +219,7 @@ export default function AuditLogsPage() {
           </Badge>
         }
         title="Audit log"
-        description="Every sensitive action in GLMS, recorded in chronological order. The trail is append-only and visible to administrators."
+        description="Every sensitive action in MIS, recorded in chronological order. The trail is append-only and visible to administrators."
         actions={<ExportButton entries={filtered} />}
       />
 

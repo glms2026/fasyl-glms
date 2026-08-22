@@ -261,7 +261,7 @@ export default function UsersListPage() {
     <div className="space-y-6">
       <ModuleHeader
         title="All users"
-        description="Search, filter and manage every account in GLMS. Sensitive changes are queued for approval."
+        description="Search, filter and manage every account in MIS. Sensitive changes are queued for approval."
         actions={
           access.canMakeChanges && (
             <Link to="/users/new" className={heroButtonClass}>

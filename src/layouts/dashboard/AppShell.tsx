@@ -130,7 +130,7 @@ export function AppShell() {
         open={signOutOpen}
         onClose={() => setSignOutOpen(false)}
         onConfirm={handleSignOut}
-        title="Sign out of GLMS?"
+        title="Sign out of MIS?"
         description="You'll need your credentials to sign back in."
         confirmLabel="Logout"
         isPending={signingOut}

@@ -51,11 +51,11 @@ export function TopBar({ onSignOut }: TopBarProps) {
 
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold tracking-tight text-neutral-900">
-            GLMS Enterprise
+            MIS Enterprise
           </p>
 
           <p className="hidden truncate text-xs text-neutral-500 sm:block">
-            General Ledger Management System
+            Management Information System
           </p>
         </div>
       </div>

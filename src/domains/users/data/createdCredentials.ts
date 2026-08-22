@@ -126,24 +126,24 @@ export function buildCredentialsEmail(
 
   const body = `Dear ${fullName},
 
-You have been successfully added to the General Ledger Management System (GLMS).
+You have been successfully added to the Management Information System (MIS).
 
 Below are your login credentials:
 
 Login Username: ${credentials.username}
 Temporary Password: ${credentials.password}
-GLMS Login URL: ${loginUrl}
+MIS Login URL: ${loginUrl}
 
 For security purposes, you are required to change your password immediately upon your first-time login. Please do not share your login credentials with anyone.
 
-Once you have successfully changed your password, you can proceed to access and use the GLMS platform.
+Once you have successfully changed your password, you can proceed to access and use the MIS platform.
 
 If you experience any issues while logging in, please contact the system administrator for assistance.
 
 Regards,
 ${signature}`;
 
-  return { to: user.email, subject: "Your GLMS login credentials", body };
+  return { to: user.email, subject: "Your MIS login credentials", body };
 }
 
 /**

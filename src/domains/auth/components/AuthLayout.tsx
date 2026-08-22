@@ -30,14 +30,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             <div className="flex flex-1 items-center">
               <div className="max-w-lg">
                 <h1 className="text-[56px] font-bold leading-[1.05] tracking-tight">
-                  GL Management
+                  Management Information
                   <br />
                   System
                 </h1>
 
                 <div className="mt-10 border-l-4 border-neutral-200 pl-5">
                   <p className="text-lg leading-9 text-neutral-300">
-                    Access the General Ledger Management System. Our
+                    Access the Management Information System. Our
                     enterprise-grade security protocols ensure the integrity of
                     every financial instrument and audit trail within the fiscal
                     ecosystem.

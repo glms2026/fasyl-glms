@@ -50,7 +50,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <ModuleHeader
         title="Settings"
-        description="Manage your account and how you sign in to GLMS."
+        description="Manage your account and how you sign in to MIS."
       />
 
       <div className="grid gap-6 xl:grid-cols-5">

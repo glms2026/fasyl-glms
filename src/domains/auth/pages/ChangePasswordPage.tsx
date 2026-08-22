@@ -101,7 +101,7 @@ export default function ChangePasswordPage({ forced = false }: ChangePasswordPag
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
         title="Change password"
-        description="Update the password you use to sign in to GLMS."
+        description="Update the password you use to sign in to MIS."
       />
 
       <SectionCard
