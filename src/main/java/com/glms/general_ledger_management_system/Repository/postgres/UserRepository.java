@@ -1,7 +1,7 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
-import com.glms.general_ledger_management_system.Model.UserStatus;
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.postgres.UserStatus;
+import com.glms.general_ledger_management_system.Model.postgres.User;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -129,18 +129,13 @@ SELECT
      * Authentication Query
      */
     @Query("""
-            SELECT u
-            FROM User u
-            WHERE
-            u.username = :username
-            AND
-            u.status = com.glms.general_ledger_management_system.Model.UserStatus.ACTIVE
-            """)
+    SELECT u FROM User u
+    WHERE u.username = :username
+    AND u.status = :status
+    """)
     Optional<User> findActiveUserByUsername(
-
-            @Param("username")
-            String username
-
+            @Param("username") String username,
+            @Param("status") UserStatus status
     );
 
 }

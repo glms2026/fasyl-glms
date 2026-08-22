@@ -1,10 +1,10 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
 
-import com.glms.general_ledger_management_system.Model.RefreshToken;
+import com.glms.general_ledger_management_system.Model.postgres.RefreshToken;
 
 
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.postgres.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

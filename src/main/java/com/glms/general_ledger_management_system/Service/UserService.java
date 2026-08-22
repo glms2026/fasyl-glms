@@ -7,10 +7,9 @@ import com.glms.general_ledger_management_system.DTO.user.CreateUserRequest;
 import com.glms.general_ledger_management_system.DTO.user.UpdateUserRequest;
 import com.glms.general_ledger_management_system.DTO.user.UserResponse;
 import com.glms.general_ledger_management_system.Mapper.UserMapper;
-import com.glms.general_ledger_management_system.Model.*;
-import com.glms.general_ledger_management_system.Repository.*;
+import com.glms.general_ledger_management_system.Model.postgres.*;
 
-import jakarta.validation.Valid;
+import com.glms.general_ledger_management_system.Repository.postgres.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;

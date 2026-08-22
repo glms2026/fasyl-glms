@@ -1,11 +1,11 @@
 package com.glms.general_ledger_management_system.Service;
 
 import com.glms.general_ledger_management_system.DTO.auth.*;
-import com.glms.general_ledger_management_system.Model.*;
-import com.glms.general_ledger_management_system.Repository.AuditLogRepository;
-import com.glms.general_ledger_management_system.Repository.JwtTokenRepository;
-import com.glms.general_ledger_management_system.Repository.PasswordResetTokenRepository;
-import com.glms.general_ledger_management_system.Repository.UserRepository;
+import com.glms.general_ledger_management_system.Model.postgres.*;
+import com.glms.general_ledger_management_system.Repository.postgres.AuditLogRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.JwtTokenRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.PasswordResetTokenRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.UserRepository;
 import com.glms.general_ledger_management_system.Security.JwtService;
 
 import lombok.RequiredArgsConstructor;

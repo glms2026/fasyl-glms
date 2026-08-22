@@ -1,4 +1,4 @@
-package com.glms.general_ledger_management_system.Model;
+package com.glms.general_ledger_management_system.Model.postgres;
 
 
 import jakarta.persistence.*;
@@ -33,14 +33,16 @@ public class User {
 
     @Column(
             unique = true,
-            nullable = false
+            nullable = false,
+            name = "username"
     )
     private String username;
 
 
 
     @Column(
-            nullable = false
+            nullable = false,
+            name = "password"
     )
     private String password;
 
@@ -48,25 +50,26 @@ public class User {
 
     @Column(
             unique = true,
-            nullable = false
+            nullable = false,
+            name = "email"
     )
     private String email;
 
 
-
+    @Column(name = "first_name")
     private String firstName;
 
-
+    @Column(name = "last_name")
     private String lastName;
 
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, name = "status")
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
 
-
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "UPDATED_AT")

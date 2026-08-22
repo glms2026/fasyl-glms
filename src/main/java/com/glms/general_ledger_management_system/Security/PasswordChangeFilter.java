@@ -1,7 +1,7 @@
 package com.glms.general_ledger_management_system.Security;
 
-import com.glms.general_ledger_management_system.Model.User;
-import com.glms.general_ledger_management_system.Repository.UserRepository;
+import com.glms.general_ledger_management_system.Model.postgres.User;
+import com.glms.general_ledger_management_system.Repository.postgres.UserRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

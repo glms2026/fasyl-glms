@@ -2,20 +2,19 @@ package com.glms.general_ledger_management_system.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.glms.general_ledger_management_system.DTO.user.AssignRoleApprovalRequest;
 import com.glms.general_ledger_management_system.DTO.user.UpdateUserRequest;
-import com.glms.general_ledger_management_system.Model.ApprovalStatus;
-import com.glms.general_ledger_management_system.Model.AuditLog;
-import com.glms.general_ledger_management_system.Model.Role;
-import com.glms.general_ledger_management_system.Model.User;
-import com.glms.general_ledger_management_system.Model.UserApprovalAction;
-import com.glms.general_ledger_management_system.Model.UserApprovalRequest;
-import com.glms.general_ledger_management_system.Model.UserStatus;
-import com.glms.general_ledger_management_system.Repository.*;
+import com.glms.general_ledger_management_system.Model.postgres.ApprovalStatus;
+import com.glms.general_ledger_management_system.Model.postgres.AuditLog;
+import com.glms.general_ledger_management_system.Model.postgres.Ledger;
+import com.glms.general_ledger_management_system.Model.postgres.LedgerStatus;
+import com.glms.general_ledger_management_system.Model.postgres.Role;
+import com.glms.general_ledger_management_system.Model.postgres.User;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalAction;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalRequest;
+import com.glms.general_ledger_management_system.Model.postgres.UserStatus;
 
-import com.glms.general_ledger_management_system.DTO.user.AssignPermissionApprovalRequest;
-import com.glms.general_ledger_management_system.Model.Permission;
-import com.glms.general_ledger_management_system.Repository.PermissionRepository;
+import com.glms.general_ledger_management_system.Model.postgres.Permission;
+import com.glms.general_ledger_management_system.Repository.postgres.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -58,6 +57,8 @@ public class UserApprovalRequestService {
     private final PermissionRepository permissionRepository;
 
     private final ObjectMapper objectMapper;
+
+    private final LedgerRepository ledgerRepository;
 
 
     /**
@@ -806,6 +807,9 @@ public class UserApprovalRequestService {
                         ||
                         request.getActionType()
                         == UserApprovalAction.REMOVE_PERMISSION
+                        ||
+                        request.getActionType()
+                        == UserApprovalAction.LEDGER_CREATE
         ) {
 
             if (request.getRoles() == null
@@ -1946,6 +1950,41 @@ public class UserApprovalRequestService {
 
             /*
              * ====================================================
+             * LEDGER CREATE
+             * ====================================================
+             *
+             * When a ledger creation request is approved,
+             * the ledger status changes from PROCESSING to SUBMITTED.
+             *
+             * PROCESSING = submitted by maker, awaiting approval
+             * SUBMITTED  = approved, active and in the DB
+             */
+            case LEDGER_CREATE -> {
+
+                Ledger ledger = findLedgerFromRequest(request);
+
+                if (ledger.getStatus() == LedgerStatus.SUBMITTED) {
+                    throw new IllegalStateException(
+                            "This ledger has already been submitted and approved — nothing to do here."
+                    );
+                }
+
+                if (ledger.getStatus() != LedgerStatus.PROCESSING) {
+                    throw new IllegalStateException(
+                            "This ledger is not in processing status — current status: "
+                                    + ledger.getStatus()
+                    );
+                }
+
+                ledger.setStatus(LedgerStatus.SUBMITTED);
+                ledger.setUpdatedAt(LocalDateTime.now());
+
+                ledgerRepository.save(ledger);
+            }
+
+
+            /*
+             * ====================================================
              * UNSUPPORTED ACTION
              * ====================================================
              *
@@ -2343,7 +2382,8 @@ public class UserApprovalRequestService {
                          "USER_UNSUSPEND",
                          "USER_LOCK",
                          "USER_CREATE",
-                         "ASSIGN_ROLE" -> true;
+                         "ASSIGN_ROLE",
+                         "LEDGER_CREATE" -> true;
 
                     default -> false;
                 };
@@ -3148,6 +3188,45 @@ public class UserApprovalRequestService {
 
         return normalized;
     }
+
+
+    /**
+     * ============================================================
+     * FIND LEDGER FROM APPROVAL REQUEST
+     * ============================================================
+     *
+     * LEDGER_CREATE requests store the ledger code in the
+     * reason field. This helper retrieves the ledger entity.
+     */
+    private Ledger findLedgerFromRequest(
+            UserApprovalRequest request
+    ) {
+
+        /*
+         * The ledger code is embedded in the reason field
+         * during creation. Parse it out.
+         */
+        String reason = request.getReason();
+
+        if (reason == null || !reason.contains(": ")) {
+            throw new IllegalStateException(
+                    "This request doesn't contain ledger information — please create it again."
+            );
+        }
+
+        String ledgerCode = reason.substring(
+                reason.indexOf(": ") + 2
+        ).trim();
+
+        return ledgerRepository
+                .findByLedgerCodeAndDeletedFalse(ledgerCode)
+                .orElseThrow(() ->
+                        new IllegalStateException(
+                                "The ledger with code " + ledgerCode + " no longer exists."
+                        )
+                );
+    }
+
 
 
     /**

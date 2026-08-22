@@ -1,4 +1,4 @@
-package com.glms.general_ledger_management_system.Model;
+package com.glms.general_ledger_management_system.Model.postgres;
 
 
 import jakarta.persistence.*;
@@ -30,20 +30,23 @@ public class AuditLog {
     private Long id;
 
 
-
+    @Column(name = "username")
     private String username;
 
 
+    @Column(name = "action")
     private String action;
 
 
     @Column(
-            length = 4000
+            length = 4000,
+            name = "description"
     )
     private String description;
 
 
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
 

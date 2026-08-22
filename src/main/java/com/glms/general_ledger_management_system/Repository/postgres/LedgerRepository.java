@@ -1,7 +1,6 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
-import com.glms.general_ledger_management_system.Model.Ledger;
-import com.glms.general_ledger_management_system.Model.LedgerType;
+import com.glms.general_ledger_management_system.Model.postgres.Ledger;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,14 +55,6 @@ public interface LedgerRepository
     );
 
     /**
-     * Find active ledgers by ledger type.
-     */
-    Page<Ledger> findByLedgerTypeAndDeletedFalse(
-            LedgerType ledgerType,
-            Pageable pageable
-    );
-
-    /**
      * Search all active ledgers.
      *
      * Searches:
@@ -78,7 +69,7 @@ public interface LedgerRepository
                 LOWER(l.ledgerCode)
                 LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR
-                LOWER(l.ledgerName)
+                LOWER(l.ledgerType)
                 LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             """)
@@ -102,7 +93,7 @@ public interface LedgerRepository
                 LOWER(l.ledgerCode)
                 LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR
-                LOWER(l.ledgerName)
+                LOWER(l.ledgerType)
                 LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             """)

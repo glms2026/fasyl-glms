@@ -3,8 +3,8 @@ package com.glms.general_ledger_management_system.controller;
 import com.glms.general_ledger_management_system.DTO.user.ApprovalDecisionRequest;
 import com.glms.general_ledger_management_system.DTO.user.AssignRoleApprovalRequest;
 import com.glms.general_ledger_management_system.DTO.user.UserApprovalRequestResponse;
-import com.glms.general_ledger_management_system.Model.UserApprovalAction;
-import com.glms.general_ledger_management_system.Model.UserApprovalRequest;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalAction;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalRequest;
 import com.glms.general_ledger_management_system.Service.UserApprovalRequestService;
 
 import io.swagger.v3.oas.annotations.Operation;

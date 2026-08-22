@@ -3,9 +3,9 @@ package com.glms.general_ledger_management_system.Mapper;
 import com.glms.general_ledger_management_system.DTO.ledger.CreateLedgerRequest;
 import com.glms.general_ledger_management_system.DTO.ledger.LedgerResponse;
 import com.glms.general_ledger_management_system.DTO.ledger.UpdateLedgerRequest;
-import com.glms.general_ledger_management_system.Model.Ledger;
-import com.glms.general_ledger_management_system.Model.LedgerStatus;
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.postgres.Ledger;
+import com.glms.general_ledger_management_system.Model.postgres.LedgerStatus;
+import com.glms.general_ledger_management_system.Model.postgres.User;
 
 import org.springframework.stereotype.Component;
 
@@ -22,20 +22,20 @@ public class LedgerMapper {
                         request.getLedgerCode()
                 )
 
-                .ledgerName(
-                        request.getLedgerName()
-                )
-
-                .description(
-                        request.getDescription()
-                )
-
                 .ledgerType(
                         request.getLedgerType()
                 )
 
+                .leaf(
+                        request.getLeaf()
+                )
+
+                .ledgerDescription(
+                        request.getDescription()
+                )
+
                 .status(
-                        LedgerStatus.ACTIVE
+                        LedgerStatus.PROCESSING
                 )
 
                 .deleted(false)
@@ -49,12 +49,8 @@ public class LedgerMapper {
             UpdateLedgerRequest request
     ) {
 
-        ledger.setLedgerName(
-                request.getLedgerName()
-        );
-
-        ledger.setDescription(
-                request.getDescription()
+        ledger.setLedgerType(
+                request.getLedgerType()
         );
     }
 
@@ -76,16 +72,16 @@ public class LedgerMapper {
                         ledger.getLedgerCode()
                 )
 
-                .ledgerName(
-                        ledger.getLedgerName()
+                .ledgerType(
+                        ledger.getLedgerType()
+                )
+
+                .leaf(
+                        ledger.getLeaf()
                 )
 
                 .description(
-                        ledger.getDescription()
-                )
-
-                .ledgerType(
-                        ledger.getLedgerType()
+                        ledger.getLedgerDescription()
                 )
 
                 .status(

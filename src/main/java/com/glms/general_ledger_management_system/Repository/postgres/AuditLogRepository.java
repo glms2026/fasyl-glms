@@ -1,7 +1,7 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
 
-import com.glms.general_ledger_management_system.Model.AuditLog;
+import com.glms.general_ledger_management_system.Model.postgres.AuditLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

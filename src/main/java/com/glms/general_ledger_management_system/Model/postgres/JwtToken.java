@@ -1,4 +1,4 @@
-package com.glms.general_ledger_management_system.Model;
+package com.glms.general_ledger_management_system.Model.postgres;
 
 
 import jakarta.persistence.*;
@@ -27,17 +27,21 @@ public class JwtToken {
 
     @Column(
             columnDefinition = "TEXT",
-            nullable = false
+            nullable = false,
+            name = "token"
     )
     private String token;
 
 
 
+    @Column(name = "revoked")
     private boolean revoked;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
 
+    @Column(name = "expiry_date")
     private LocalDateTime expiryDate;
 
 

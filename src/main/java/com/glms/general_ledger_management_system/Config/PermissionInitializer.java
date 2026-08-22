@@ -1,9 +1,9 @@
 package com.glms.general_ledger_management_system.Config;
 
-import com.glms.general_ledger_management_system.Model.Permission;
-import com.glms.general_ledger_management_system.Model.Role;
-import com.glms.general_ledger_management_system.Repository.PermissionRepository;
-import com.glms.general_ledger_management_system.Repository.RoleRepository;
+import com.glms.general_ledger_management_system.Model.postgres.Permission;
+import com.glms.general_ledger_management_system.Model.postgres.Role;
+import com.glms.general_ledger_management_system.Repository.postgres.PermissionRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.RoleRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -209,7 +209,8 @@ public class PermissionInitializer {
                         "UPDATE_PERMISSION",
                         "ASSIGN_ROLE",
                         "ASSIGN_PERMISSION",
-                        "REMOVE_PERMISSION"
+                        "REMOVE_PERMISSION",
+                        "LEDGER_CREATE"
                 )
         );
 

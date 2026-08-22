@@ -5,8 +5,8 @@ import com.glms.general_ledger_management_system.DTO.auth.*;
 
 import com.glms.general_ledger_management_system.DTO.user.UserResponse;
 
-import com.glms.general_ledger_management_system.Model.User;
-import com.glms.general_ledger_management_system.Repository.UserRepository;
+import com.glms.general_ledger_management_system.Model.postgres.User;
+import com.glms.general_ledger_management_system.Repository.postgres.UserRepository;
 
 import com.glms.general_ledger_management_system.Service.AuthenticationService;
 
@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 

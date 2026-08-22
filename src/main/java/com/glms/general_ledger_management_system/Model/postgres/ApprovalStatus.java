@@ -1,4 +1,4 @@
-package com.glms.general_ledger_management_system.Model;
+package com.glms.general_ledger_management_system.Model.postgres;
 
 
 public enum ApprovalStatus {

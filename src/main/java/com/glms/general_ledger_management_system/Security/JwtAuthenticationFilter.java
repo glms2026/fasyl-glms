@@ -1,7 +1,7 @@
 package com.glms.general_ledger_management_system.Security;
 
 
-import com.glms.general_ledger_management_system.Repository.JwtTokenRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.JwtTokenRepository;
 import com.glms.general_ledger_management_system.Service.CustomUserDetailsService;
 
 import jakarta.servlet.FilterChain;

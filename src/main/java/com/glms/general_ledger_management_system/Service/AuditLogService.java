@@ -1,8 +1,8 @@
 package com.glms.general_ledger_management_system.Service;
 
 import com.glms.general_ledger_management_system.DTO.audit.AuditLogResponse;
-import com.glms.general_ledger_management_system.Model.AuditLog;
-import com.glms.general_ledger_management_system.Repository.AuditLogRepository;
+import com.glms.general_ledger_management_system.Model.postgres.AuditLog;
+import com.glms.general_ledger_management_system.Repository.postgres.AuditLogRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;

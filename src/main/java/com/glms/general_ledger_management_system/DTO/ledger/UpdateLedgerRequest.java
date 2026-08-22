@@ -1,9 +1,6 @@
 package com.glms.general_ledger_management_system.DTO.ledger;
 
-import com.glms.general_ledger_management_system.Model.LedgerType;
-
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import lombok.AllArgsConstructor;
@@ -19,20 +16,19 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UpdateLedgerRequest {
 
-    @NotBlank(message = "Ledger name is required")
+    @NotBlank(message = "Ledger Type is required")
     @Size(
             min = 2,
-            max = 150,
-            message = "Ledger name must be between 2 and 150 characters"
+            max = 150
     )
-    private String ledgerName;
+    private String ledgerType;
 
 
-    @Size(
-            max = 500,
-            message = "Description cannot exceed 500 characters"
-    )
-    private String description;
+//    @Size(
+//            max = 500,
+//            message = "Description cannot exceed 500 characters"
+//    )
+//    private String description;
 
 
 }

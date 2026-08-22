@@ -6,8 +6,8 @@ import com.glms.general_ledger_management_system.DTO.user.UpdateUserRequest;
 import com.glms.general_ledger_management_system.DTO.user.UserActionRequest;
 import com.glms.general_ledger_management_system.DTO.user.UserApprovalRequestResponse;
 import com.glms.general_ledger_management_system.DTO.user.UserResponse;
-import com.glms.general_ledger_management_system.Model.UserApprovalAction;
-import com.glms.general_ledger_management_system.Model.UserApprovalRequest;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalAction;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalRequest;
 import com.glms.general_ledger_management_system.Service.UserApprovalRequestService;
 import com.glms.general_ledger_management_system.Service.UserService;
 

@@ -4,10 +4,10 @@ import com.glms.general_ledger_management_system.DTO.user.CreateUserRequest;
 import com.glms.general_ledger_management_system.DTO.user.UpdateUserRequest;
 import com.glms.general_ledger_management_system.DTO.user.UserResponse;
 
-import com.glms.general_ledger_management_system.Model.Role;
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.postgres.Role;
+import com.glms.general_ledger_management_system.Model.postgres.User;
 
-import com.glms.general_ledger_management_system.Model.UserStatus;
+import com.glms.general_ledger_management_system.Model.postgres.UserStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

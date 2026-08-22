@@ -1,7 +1,7 @@
 package com.glms.general_ledger_management_system.DTO.user;
 
-import com.glms.general_ledger_management_system.Model.ApprovalStatus;
-import com.glms.general_ledger_management_system.Model.UserApprovalAction;
+import com.glms.general_ledger_management_system.Model.postgres.ApprovalStatus;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalAction;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

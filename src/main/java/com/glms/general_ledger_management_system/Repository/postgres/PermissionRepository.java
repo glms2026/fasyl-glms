@@ -1,7 +1,7 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
 
-import com.glms.general_ledger_management_system.Model.Permission;
+import com.glms.general_ledger_management_system.Model.postgres.Permission;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

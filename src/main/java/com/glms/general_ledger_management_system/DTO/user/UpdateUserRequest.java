@@ -1,9 +1,8 @@
 package com.glms.general_ledger_management_system.DTO.user;
 
-import com.glms.general_ledger_management_system.Model.UserStatus;
+import com.glms.general_ledger_management_system.Model.postgres.UserStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import lombok.AllArgsConstructor;

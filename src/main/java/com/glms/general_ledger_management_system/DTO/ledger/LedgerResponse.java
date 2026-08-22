@@ -1,7 +1,6 @@
 package com.glms.general_ledger_management_system.DTO.ledger;
 
-import com.glms.general_ledger_management_system.Model.LedgerStatus;
-import com.glms.general_ledger_management_system.Model.LedgerType;
+import com.glms.general_ledger_management_system.Model.postgres.LedgerStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,11 +21,11 @@ public class LedgerResponse {
 
     private String ledgerCode;
 
-    private String ledgerName;
+    private String leaf;
 
     private String description;
 
-    private LedgerType ledgerType;
+    private String ledgerType;
 
     private LedgerStatus status;
 

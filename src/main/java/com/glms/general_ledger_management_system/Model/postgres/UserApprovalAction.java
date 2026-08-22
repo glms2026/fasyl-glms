@@ -1,4 +1,4 @@
-package com.glms.general_ledger_management_system.Model;
+package com.glms.general_ledger_management_system.Model.postgres;
 
 
 public enum UserApprovalAction {
@@ -22,5 +22,7 @@ public enum UserApprovalAction {
     UPDATE_PERMISSION,
     ASSIGN_ROLE,
     ASSIGN_PERMISSION,
-    REMOVE_PERMISSION
+    REMOVE_PERMISSION,
+
+    LEDGER_CREATE
 }

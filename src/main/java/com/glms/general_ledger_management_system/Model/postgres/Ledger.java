@@ -1,4 +1,4 @@
-package com.glms.general_ledger_management_system.Model;
+package com.glms.general_ledger_management_system.Model.postgres;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -64,28 +64,39 @@ public class Ledger {
             name = "LEDGER_CODE",
             nullable = false,
             unique = true,
-            length = 20
+            length = 30
     )
     private String ledgerCode;
 
+
+    @Column(
+            name = "LEAF",
+            nullable = false,
+            length = 1
+    )
+    private String leaf;
+
+
+
     /**
-     * Ledger Name
+     * Ledger Type (auto-populated from Oracle GL_DESC)
      */
     @Column(
-            name = "LEDGER_NAME",
+            name = "LEDGER_TYPE",
             nullable = false,
             length = 150
     )
-    private String ledgerName;
+    private String ledgerType;
+
 
     /**
-     * Ledger Description
+     * Ledger Description (auto-populated from Oracle GL_DESC)
      */
     @Column(
             name = "DESCRIPTION",
             length = 500
     )
-    private String description;
+    private String ledgerDescription;
 
     /**
      * Ledger Status
@@ -97,17 +108,9 @@ public class Ledger {
             length = 20
     )
     @Builder.Default
-    private LedgerStatus status = LedgerStatus.ACTIVE;
+    private LedgerStatus status = LedgerStatus.PENDING;
 
 
-    @Enumerated(EnumType.STRING)
-    @Column(
-            name = "LEDGER_TYPE",
-            nullable = false,
-            length = 30
-    )
-
-    private LedgerType ledgerType = LedgerType.GENERAL;
 
     /**
      * User that created the ledger
@@ -183,7 +186,7 @@ public class Ledger {
         this.updatedAt = now;
 
         if (this.status == null) {
-            this.status = LedgerStatus.ACTIVE;
+            this.status = LedgerStatus.PENDING;
         }
     }
 

@@ -1,9 +1,9 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
-import com.glms.general_ledger_management_system.Model.ApprovalStatus;
-import com.glms.general_ledger_management_system.Model.UserApprovalRequest;
-import com.glms.general_ledger_management_system.Model.UserApprovalAction;
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.postgres.ApprovalStatus;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalRequest;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalAction;
+import com.glms.general_ledger_management_system.Model.postgres.User;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

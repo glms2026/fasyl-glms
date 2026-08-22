@@ -1,8 +1,8 @@
-package com.glms.general_ledger_management_system.Repository;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
 
-import com.glms.general_ledger_management_system.Model.PasswordResetToken;
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.postgres.PasswordResetToken;
+import com.glms.general_ledger_management_system.Model.postgres.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

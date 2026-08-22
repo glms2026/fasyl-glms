@@ -1,6 +1,6 @@
 package com.glms.general_ledger_management_system.DTO.user;
 
-import com.glms.general_ledger_management_system.Model.UserApprovalAction;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalAction;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

@@ -5,9 +5,9 @@ import com.glms.general_ledger_management_system.DTO.role.AssignPermissionReques
 import com.glms.general_ledger_management_system.DTO.role.PermissionResponse;
 import com.glms.general_ledger_management_system.DTO.role.RoleResponse;
 import com.glms.general_ledger_management_system.DTO.user.UserApprovalRequestResponse;
-import com.glms.general_ledger_management_system.Model.Permission;
-import com.glms.general_ledger_management_system.Model.Role;
-import com.glms.general_ledger_management_system.Model.UserApprovalRequest;
+import com.glms.general_ledger_management_system.Model.postgres.Permission;
+import com.glms.general_ledger_management_system.Model.postgres.Role;
+import com.glms.general_ledger_management_system.Model.postgres.UserApprovalRequest;
 import com.glms.general_ledger_management_system.Service.RolePermissionService;
 import com.glms.general_ledger_management_system.Service.UserApprovalRequestService;
 

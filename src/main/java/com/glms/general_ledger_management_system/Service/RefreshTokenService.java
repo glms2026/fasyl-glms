@@ -1,8 +1,8 @@
 package com.glms.general_ledger_management_system.Service;
 
-import com.glms.general_ledger_management_system.Model.RefreshToken;
-import com.glms.general_ledger_management_system.Model.User;
-import com.glms.general_ledger_management_system.Repository.RefreshTokenRepository;
+import com.glms.general_ledger_management_system.Model.postgres.RefreshToken;
+import com.glms.general_ledger_management_system.Model.postgres.User;
+import com.glms.general_ledger_management_system.Repository.postgres.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

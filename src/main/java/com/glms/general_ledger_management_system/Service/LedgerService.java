@@ -3,15 +3,15 @@ package com.glms.general_ledger_management_system.Service;
 import com.glms.general_ledger_management_system.DTO.ledger.CreateLedgerRequest;
 import com.glms.general_ledger_management_system.DTO.ledger.LedgerResponse;
 import com.glms.general_ledger_management_system.DTO.ledger.UpdateLedgerRequest;
-import com.glms.general_ledger_management_system.Model.AuditLog;
-import com.glms.general_ledger_management_system.Model.Ledger;
-import com.glms.general_ledger_management_system.Model.LedgerStatus;
-import com.glms.general_ledger_management_system.Model.User;
+import com.glms.general_ledger_management_system.Model.oracle.LedgerReference;
 import com.glms.general_ledger_management_system.Mapper.LedgerMapper;
-import com.glms.general_ledger_management_system.Repository.AuditLogRepository;
-import com.glms.general_ledger_management_system.Repository.LedgerRepository;
-import com.glms.general_ledger_management_system.Repository.UserRepository;
+import com.glms.general_ledger_management_system.Model.postgres.*;
+import com.glms.general_ledger_management_system.Repository.oracle.LedgerReferenceRepository;
 
+import com.glms.general_ledger_management_system.Repository.postgres.AuditLogRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.LedgerRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.UserApprovalRequestRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 
 
 @Service
@@ -43,65 +44,166 @@ public class LedgerService {
 
     private final LedgerMapper ledgerMapper;
 
+    private final LedgerReferenceRepository ledgerReferenceRepository;
+
+    private final UserApprovalRequestRepository approvalRequestRepository;
+
 
     /**
-     * Create a new ledger.
+     * ============================================================
+     * LOOKUP ORACLE REFERENCE DATA
+     * ============================================================
      *
-     * The authenticated user automatically becomes
-     * the owner of the ledger.
+     * When a user enters a GL_CODE, this method fetches
+     * the reference data from the Oracle General_ledger table.
+     *
+     * Returns GL_DESC (→ ledgerType) and LEAF (→ leaf)
+     * for auto-populating the frontend form.
+     */
+    @Transactional(readOnly = true)
+    public LedgerReference lookupLedgerReference(
+            String ledgerCode
+    ) {
+
+        if (ledgerCode == null || ledgerCode.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Please enter a ledger code to look up."
+            );
+        }
+
+        return ledgerReferenceRepository
+                .findByGlCode(ledgerCode.trim())
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "No reference data found for ledger code: "
+                                        + ledgerCode.trim()
+                                        + " — please check the code and try again."
+                        )
+                );
+    }
+
+
+
+    /**
+     * ============================================================
+     * CREATE LEDGER (MAKER OPERATION)
+     * ============================================================
+     *
+     * Creates a ledger through the Maker/Checker workflow.
+     *
+     * Flow:
+     *   Maker creates ledger → status PENDING
+     *   → Authorizer/Admin approves → status SUBMITTED
+     *
+     * The ledger code must exist in the Oracle reference table.
      */
     public LedgerResponse createLedger(
             CreateLedgerRequest request
     ) {
 
         /*
-         * Prevent duplicate ledger codes.
+         * 1. Look up Oracle reference data.
          */
-        if (ledgerRepository.existsByLedgerCodeAndDeletedFalse(
-                request.getLedgerCode()
-        )) {
+        LedgerReference reference =
+                ledgerReferenceRepository
+                        .findByGlCode(request.getLedgerCode().trim())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "No reference data found for ledger code: "
+                                                + request.getLedgerCode()
+                                                + " — please check the code and try again."
+                                )
+                        );
+
+
+        /*
+         * 2. Validate that auto-filled fields match Oracle reference.
+         *    GL_DESC → description, LEAF → leaf
+         */
+        if (request.getDescription() != null
+                && !request.getDescription().isBlank()
+                && !reference.getGlDesc().trim()
+                .equalsIgnoreCase(request.getDescription().trim())) {
 
             throw new IllegalArgumentException(
-                    "A ledger with this code already exists - please try a different code."
+                    "The description doesn't match our reference records for this code — please re-enter the code to refresh."
+            );
+        }
+
+        if (!reference.getLeaf().trim()
+                .equals(request.getLeaf().trim())) {
+
+            throw new IllegalArgumentException(
+                    "The leaf indicator doesn't match our reference records — please re-enter the code to refresh."
             );
         }
 
 
         /*
-         * Get authenticated user.
+         * 3. Prevent duplicate ledger codes in GLMS.
+         */
+        if (ledgerRepository.existsByLedgerCodeAndDeletedFalse(
+                request.getLedgerCode().trim()
+        )) {
+
+            throw new IllegalArgumentException(
+                    "A ledger with this code already exists — please try a different code."
+            );
+        }
+
+
+        /*
+         * 4. Get authenticated user (Maker).
          */
         User currentUser =
                 getAuthenticatedUser();
 
 
         /*
-         * Convert request to entity.
+         * 5. Convert request to entity.
          */
         Ledger ledger =
                 ledgerMapper.toEntity(request);
 
 
         /*
-         * Assign ownership.
+         * 6. Assign ownership.
          */
         ledger.setCreatedBy(currentUser);
 
 
         /*
-         * Save ledger.
+         * 7. Save ledger with PENDING status.
          */
         ledger =
                 ledgerRepository.save(ledger);
 
 
         /*
-         * Audit log.
+         * 8. Create LEDGER_CREATE approval request.
+         */
+        UserApprovalRequest approvalRequest =
+                UserApprovalRequest.builder()
+                        .maker(currentUser)
+                        .actionType(UserApprovalAction.LEDGER_CREATE)
+                        .status(ApprovalStatus.PENDING)
+                        .reason("Ledger creation request for code: " + ledger.getLedgerCode())
+                        .requestedAt(java.time.ZonedDateTime.now())
+                        .roles(new HashSet<>())
+                        .build();
+
+        approvalRequestRepository.save(approvalRequest);
+
+
+        /*
+         * 9. Audit log.
          */
         createAuditLog(
                 currentUser.getUsername(),
-                "CREATE_LEDGER",
-                "Created ledger: "
+                "CREATE_LEDGER_REQUEST",
+                "Created ledger creation request for code: "
                         + ledger.getLedgerCode()
+                        + " — pending approval"
         );
 
 

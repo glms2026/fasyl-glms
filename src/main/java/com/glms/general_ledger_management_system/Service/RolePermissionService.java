@@ -1,12 +1,12 @@
 package com.glms.general_ledger_management_system.Service;
 
 import com.glms.general_ledger_management_system.DTO.role.AssignPermissionRequest;
-import com.glms.general_ledger_management_system.Model.AuditLog;
-import com.glms.general_ledger_management_system.Model.Permission;
-import com.glms.general_ledger_management_system.Model.Role;
-import com.glms.general_ledger_management_system.Repository.AuditLogRepository;
-import com.glms.general_ledger_management_system.Repository.PermissionRepository;
-import com.glms.general_ledger_management_system.Repository.RoleRepository;
+import com.glms.general_ledger_management_system.Model.postgres.AuditLog;
+import com.glms.general_ledger_management_system.Model.postgres.Permission;
+import com.glms.general_ledger_management_system.Model.postgres.Role;
+import com.glms.general_ledger_management_system.Repository.postgres.AuditLogRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.PermissionRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.RoleRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
