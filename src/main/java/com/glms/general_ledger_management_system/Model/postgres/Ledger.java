@@ -20,10 +20,6 @@ import java.time.LocalDateTime;
                         columnList = "LEDGER_CODE"
                 ),
                 @Index(
-                        name = "IDX_LEDGER_NAME",
-                        columnList = "LEDGER_NAME"
-                ),
-                @Index(
                         name = "IDX_LEDGER_STATUS",
                         columnList = "STATUS"
                 ),
@@ -170,12 +166,6 @@ public class Ledger {
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
-    /**
-     * Optimistic Locking
-     */
-    @Version
-    @Column(name = "VERSION")
-    private Long version;
 
     @PrePersist
     public void prePersist() {

@@ -24,5 +24,6 @@ public enum UserApprovalAction {
     ASSIGN_PERMISSION,
     REMOVE_PERMISSION,
 
-    LEDGER_CREATE
+    LEDGER_CREATE,
+    LEDGER_UPDATE
 }
