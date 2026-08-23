@@ -1,24 +1,22 @@
-package com.glms.general_ledger_management_system.Repository.oracle;
+package com.glms.general_ledger_management_system.Repository.postgres;
 
-import com.glms.general_ledger_management_system.Model.oracle.LedgerReference;
+import com.glms.general_ledger_management_system.Model.postgres.LedgerReference;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 
 /**
  * ============================================================
- * LEDGER REFERENCE REPOSITORY (ORACLE)
+ * LEDGER REFERENCE REPOSITORY (PostgreSQL / Neon DB)
  * ============================================================
  *
- * Read-only repository for the Oracle General_ledger table.
+ * Read-only repository for the FCUBS_GLTM_GLMASTER table.
  * Used to look up ledger master data by GL_CODE.
- *
- * NOTE: @Repository is intentionally omitted — the bean is
- * created manually in OracleDataSourceConfig to ensure it
- * uses the Oracle EntityManagerFactory.
  */
+@Repository
 public interface LedgerReferenceRepository
         extends JpaRepository<LedgerReference, String> {
 

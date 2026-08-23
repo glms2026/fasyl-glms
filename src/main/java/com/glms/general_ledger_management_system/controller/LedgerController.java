@@ -3,7 +3,7 @@ package com.glms.general_ledger_management_system.controller;
 import com.glms.general_ledger_management_system.DTO.ledger.CreateLedgerRequest;
 import com.glms.general_ledger_management_system.DTO.ledger.LedgerResponse;
 import com.glms.general_ledger_management_system.DTO.ledger.UpdateLedgerRequest;
-import com.glms.general_ledger_management_system.Model.oracle.LedgerReference;
+import com.glms.general_ledger_management_system.Model.postgres.LedgerReference;
 import com.glms.general_ledger_management_system.Service.LedgerService;
 
 import jakarta.validation.Valid;
@@ -53,11 +53,11 @@ public class LedgerController {
 
 
     /**
-     * LOOKUP ORACLE REFERENCE DATA
+     * LOOKUP REFERENCE DATA
      *
      * When the user enters a GL_CODE, the frontend calls
-     * this endpoint to auto-fill ledgerType and leaf
-     * from the Oracle General_ledger table.
+     * this endpoint to auto-fill description and leaf
+     * from the FCUBS_GLTM_GLMASTER table.
      */
     @GetMapping("/lookup/{ledgerCode}")
     @PreAuthorize("hasAuthority('LEDGER_CREATE')")

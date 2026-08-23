@@ -3,10 +3,10 @@ package com.glms.general_ledger_management_system.Service;
 import com.glms.general_ledger_management_system.DTO.ledger.CreateLedgerRequest;
 import com.glms.general_ledger_management_system.DTO.ledger.LedgerResponse;
 import com.glms.general_ledger_management_system.DTO.ledger.UpdateLedgerRequest;
-import com.glms.general_ledger_management_system.Model.oracle.LedgerReference;
+import com.glms.general_ledger_management_system.Model.postgres.LedgerReference;
 import com.glms.general_ledger_management_system.Mapper.LedgerMapper;
 import com.glms.general_ledger_management_system.Model.postgres.*;
-import com.glms.general_ledger_management_system.Repository.oracle.LedgerReferenceRepository;
+import com.glms.general_ledger_management_system.Repository.postgres.LedgerReferenceRepository;
 
 import com.glms.general_ledger_management_system.Repository.postgres.AuditLogRepository;
 import com.glms.general_ledger_management_system.Repository.postgres.LedgerRepository;
@@ -51,13 +51,13 @@ public class LedgerService {
 
     /**
      * ============================================================
-     * LOOKUP ORACLE REFERENCE DATA
+     * LOOKUP REFERENCE DATA
      * ============================================================
      *
      * When a user enters a GL_CODE, this method fetches
-     * the reference data from the Oracle General_ledger table.
+     * the reference data from the FCUBS_GLTM_GLMASTER table.
      *
-     * Returns GL_DESC (→ ledgerType) and LEAF (→ leaf)
+     * Returns GL_DESC (→ description) and LEAF (→ leaf)
      * for auto-populating the frontend form.
      */
     @Transactional(readOnly = true)
@@ -102,7 +102,7 @@ public class LedgerService {
     ) {
 
         /*
-         * 1. Look up Oracle reference data.
+         * 1. Look up reference data from FCUBS_GLTM_GLMASTER.
          */
         LedgerReference reference =
                 ledgerReferenceRepository
@@ -117,7 +117,7 @@ public class LedgerService {
 
 
         /*
-         * 2. Validate that auto-filled fields match Oracle reference.
+         * 2. Validate that auto-filled fields match reference data.
          *    GL_DESC → description, LEAF → leaf
          */
         if (request.getDescription() != null

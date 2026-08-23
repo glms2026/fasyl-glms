@@ -22,16 +22,16 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 )
 public class PostgresDataSourceConfig {
 
-    @Value("${app.datasource.url}")
+    @Value("${spring.datasource.url}")
     private String url;
 
-    @Value("${app.datasource.username}")
+    @Value("${spring.datasource.username}")
     private String username;
 
-    @Value("${app.datasource.password}")
+    @Value("${spring.datasource.password}")
     private String password;
 
-    @Value("${app.datasource.driver-class-name}")
+    @Value("${spring.datasource.driver-class-name}")
     private String driverClassName;
 
     @Bean(name = "postgresDataSource")
