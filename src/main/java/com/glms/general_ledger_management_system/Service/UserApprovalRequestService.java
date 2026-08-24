@@ -798,6 +798,58 @@ public class UserApprovalRequestService {
 
 
         /*
+         * LEDGER_CREATE requests do not target a user or role.
+         * They target a ledger. Handle separately.
+         */
+        if (request.getActionType()
+                == UserApprovalAction.LEDGER_CREATE) {
+
+            request.setAuthorizer(
+                    authorizer
+            );
+
+            request.setStatus(
+                    ApprovalStatus.APPROVED
+            );
+
+            request.setAuthorizerRemark(
+                    normalizeRemark(remark)
+            );
+
+            request.setAuthorizedAt(
+                    ZonedDateTime.now()
+            );
+
+
+            /*
+             * Execute the ledger status change.
+             */
+            executeApprovedAction(
+                    request
+            );
+
+
+            UserApprovalRequest savedRequest =
+                    approvalRequestRepository.save(
+                            request
+                    );
+
+
+            createAuditLog(
+                    authorizer.getUsername(),
+                    "APPROVE_LEDGER_REQUEST",
+                    "Approved ledger creation request "
+                            + request.getId()
+                            + " with action "
+                            + request.getActionType().name()
+            );
+
+
+            return savedRequest;
+        }
+
+
+        /*
          * Permission assignment/removal requests do not target a
          * user account; they target a role.
          */
@@ -807,9 +859,6 @@ public class UserApprovalRequestService {
                         ||
                         request.getActionType()
                         == UserApprovalAction.REMOVE_PERMISSION
-                        ||
-                        request.getActionType()
-                        == UserApprovalAction.LEDGER_CREATE
         ) {
 
             if (request.getRoles() == null
@@ -1500,16 +1549,19 @@ public class UserApprovalRequestService {
 
         /*
          * Permission requests target a role, not a user account.
+         * LEDGER_CREATE targets a ledger, not a user.
          * All other actions require a target user.
          */
-        boolean isPermissionAction =
+        boolean isNonUserAction =
                 action == UserApprovalAction.ASSIGN_PERMISSION
                         ||
-                        action == UserApprovalAction.REMOVE_PERMISSION;
+                        action == UserApprovalAction.REMOVE_PERMISSION
+                        ||
+                        action == UserApprovalAction.LEDGER_CREATE;
 
 
         if (user == null
-                && !isPermissionAction) {
+                && !isNonUserAction) {
 
             throw new IllegalStateException(
                     "This request doesn't specify a target user - please create it again."
