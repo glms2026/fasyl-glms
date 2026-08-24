@@ -1,5 +1,6 @@
 package com.glms.general_ledger_management_system.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.glms.general_ledger_management_system.DTO.ledger.CreateLedgerRequest;
 import com.glms.general_ledger_management_system.DTO.ledger.LedgerResponse;
 import com.glms.general_ledger_management_system.DTO.ledger.UpdateLedgerRequest;
@@ -27,7 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 
 @Service
@@ -47,6 +50,8 @@ public class LedgerService {
     private final LedgerReferenceRepository ledgerReferenceRepository;
 
     private final UserApprovalRequestRepository approvalRequestRepository;
+
+    private final ObjectMapper objectMapper;
 
 
     /**
@@ -160,54 +165,73 @@ public class LedgerService {
 
 
         /*
-         * 5. Convert request to entity.
+         * 5. Store ledger data as JSON in payloadJson.
+         *    The ledger is NOT saved to LEDGERS table yet.
+         *    It will only be created when approved.
          */
-        Ledger ledger =
-                ledgerMapper.toEntity(request);
+        String ledgerPayload;
+        try {
+            Map<String, String> payload = new HashMap<>();
+            payload.put("ledgerCode", request.getLedgerCode().trim());
+            payload.put("ledgerType", request.getLedgerType() != null ? request.getLedgerType().trim() : "");
+            payload.put("leaf", request.getLeaf() != null ? request.getLeaf().trim() : "");
+            payload.put("description", request.getDescription() != null ? request.getDescription().trim() : "");
+            payload.put("createdById", String.valueOf(currentUser.getId()));
+            ledgerPayload = objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Failed to prepare ledger data for approval — please try again."
+            );
+        }
 
 
         /*
-         * 6. Assign ownership.
-         */
-        ledger.setCreatedBy(currentUser);
-
-
-        /*
-         * 7. Save ledger with PENDING status.
-         */
-        ledger =
-                ledgerRepository.save(ledger);
-
-
-        /*
-         * 8. Create LEDGER_CREATE approval request.
+         * 6. Create LEDGER_CREATE approval request.
+         *    Ledger data is stored in payloadJson, not in LEDGERS table.
          */
         UserApprovalRequest approvalRequest =
                 UserApprovalRequest.builder()
                         .maker(currentUser)
                         .actionType(UserApprovalAction.LEDGER_CREATE)
                         .status(ApprovalStatus.PENDING)
-                        .reason("Ledger creation request for code: " + ledger.getLedgerCode())
+                        .reason("Ledger creation request for code: " + request.getLedgerCode().trim())
+                        .payloadJson(ledgerPayload)
                         .requestedAt(java.time.ZonedDateTime.now())
                         .roles(new HashSet<>())
                         .build();
 
-        approvalRequestRepository.save(approvalRequest);
+        UserApprovalRequest savedRequest =
+                approvalRequestRepository.save(approvalRequest);
 
 
         /*
-         * 9. Audit log.
+         * 7. Audit log.
          */
         createAuditLog(
                 currentUser.getUsername(),
                 "CREATE_LEDGER_REQUEST",
                 "Created ledger creation request for code: "
-                        + ledger.getLedgerCode()
+                        + request.getLedgerCode().trim()
                         + " — pending approval"
         );
 
 
-        return ledgerMapper.toResponse(ledger);
+        /*
+         * 8. Return a LedgerResponse built from the request data.
+         *    The ledger is NOT yet in the LEDGERS table.
+         */
+        return LedgerResponse.builder()
+                .id(savedRequest.getId())
+                .ledgerCode(request.getLedgerCode().trim())
+                .ledgerType(request.getLedgerType() != null ? request.getLedgerType().trim() : "")
+                .leaf(request.getLeaf() != null ? request.getLeaf().trim() : "")
+                .description(request.getDescription() != null ? request.getDescription().trim() : "")
+                .status(LedgerStatus.PROCESSING)
+                .createdById(currentUser.getId())
+                .createdByUsername(currentUser.getUsername())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
 

@@ -1386,13 +1386,18 @@ public class UserApprovalRequestService {
                 );
 
 
+        String targetDescription = request.getUser() != null
+                ? request.getUser().getUsername()
+                : (request.getActionType() == UserApprovalAction.LEDGER_CREATE
+                        ? "ledger " + (request.getReason() != null ? request.getReason() : request.getId())
+                        : "request " + request.getId());
+
         createAuditLog(
                 authorizer.getUsername(),
-                "REJECT_USER_REQUEST",
+                "REJECT_" + request.getActionType().name(),
                 "Rejected request "
                         + request.getId()
-                        + " for user "
-                        + request.getUser().getUsername()
+                        + " for " + targetDescription
                         + " with action "
                         + request.getActionType().name()
         );
@@ -2013,25 +2018,88 @@ public class UserApprovalRequestService {
              */
             case LEDGER_CREATE -> {
 
-                Ledger ledger = findLedgerFromRequest(request);
+                /*
+                 * Ledger is NOT in the LEDGERS table yet.
+                 * Parse the ledger data from payloadJson
+                 * and create it now with SUBMITTED status.
+                 */
+                String payloadJson = request.getPayloadJson();
 
-                if (ledger.getStatus() == LedgerStatus.SUBMITTED) {
+                if (payloadJson == null || payloadJson.isBlank()) {
                     throw new IllegalStateException(
-                            "This ledger has already been submitted and approved — nothing to do here."
+                            "This request doesn't contain ledger data — please create it again."
                     );
                 }
 
-                if (ledger.getStatus() != LedgerStatus.PROCESSING) {
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper =
+                            new com.fasterxml.jackson.databind.ObjectMapper();
+
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, String> payload =
+                            mapper.readValue(
+                                    payloadJson,
+                                    java.util.Map.class
+                            );
+
+                    String ledgerCode = payload.get("ledgerCode");
+                    String ledgerType = payload.get("ledgerType");
+                    String leaf = payload.get("leaf");
+                    String description = payload.get("description");
+                    String createdByIdStr = payload.get("createdById");
+
+                    if (ledgerCode == null || ledgerCode.isBlank()) {
+                        throw new IllegalStateException(
+                                "Ledger code is missing from the request data."
+                        );
+                    }
+
+                    /*
+                     * Prevent duplicate ledger codes.
+                     */
+                    if (ledgerRepository
+                            .existsByLedgerCodeAndDeletedFalse(
+                                    ledgerCode.trim()
+                            )) {
+                        throw new IllegalStateException(
+                                "A ledger with code " + ledgerCode + " already exists."
+                        );
+                    }
+
+                    /*
+                     * Find the creator user.
+                     */
+                    Long createdById = Long.parseLong(createdByIdStr);
+                    User creator = userRepository.findById(createdById)
+                            .orElseThrow(() ->
+                                    new IllegalStateException(
+                                            "The creator user no longer exists."
+                                    )
+                            );
+
+                    /*
+                     * Create and save the ledger with SUBMITTED status.
+                     */
+                    Ledger ledger = Ledger.builder()
+                            .ledgerCode(ledgerCode.trim())
+                            .ledgerType(ledgerType != null ? ledgerType.trim() : "")
+                            .leaf(leaf != null ? leaf.trim() : "")
+                            .ledgerDescription(description != null ? description.trim() : "")
+                            .status(LedgerStatus.SUBMITTED)
+                            .createdBy(creator)
+                            .deleted(false)
+                            .build();
+
+                    ledgerRepository.save(ledger);
+
+                } catch (IllegalStateException e) {
+                    throw e;
+                } catch (Exception e) {
                     throw new IllegalStateException(
-                            "This ledger is not in processing status — current status: "
-                                    + ledger.getStatus()
+                            "Failed to process ledger creation — "
+                                    + "the request data may be corrupted."
                     );
                 }
-
-                ledger.setStatus(LedgerStatus.SUBMITTED);
-                ledger.setUpdatedAt(LocalDateTime.now());
-
-                ledgerRepository.save(ledger);
             }
 
 
