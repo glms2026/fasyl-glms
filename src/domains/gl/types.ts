@@ -1,36 +1,65 @@
 /**
  * General ledger contract — mirrors the `/api/ledgers` endpoints.
+ *
+ * Field names match the Swagger schema:
+ *   ledgerCode, description, ledgerType, leaf, status
  */
 
-export interface CreateGlAccountRequest {
-  /** GL_CODE — unique chart-of-accounts code (max 9 chars). */
-  accountCode: string;
-  /** GL_DESC — human-readable description of the account. */
-  accountName: string;
-  /** GL_TYPE — e.g. ASSET, LIABILITY, EQUITY, INCOME, EXPENSE. */
-  accountType: string;
-  /** LEAF — "Y" if the account is a leaf (postings allowed), "N" for header. */
+/* ------------------------------------------------------------------ */
+/*  Request bodies                                                    */
+/* ------------------------------------------------------------------ */
+
+export interface CreateLedgerRequest {
+  ledgerCode: string;
+  description: string;
+  ledgerType: string;
   leaf: string;
 }
 
-export interface GlAccount {
+export interface UpdateLedgerRequest {
+  ledgerType: string;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Response objects                                                  */
+/* ------------------------------------------------------------------ */
+
+export type LedgerStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "SUBMITTED"
+  | "ACTIVE"
+  | "INACTIVE"
+  | "SUSPENDED";
+
+export interface LedgerResponse {
   id: number;
-  accountCode: string;
-  accountName: string;
-  accountType: string;
+  ledgerCode: string;
   leaf: string;
+  description: string;
+  ledgerType: string;
+  status: LedgerStatus;
+  createdById: number;
+  createdByUsername: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 /**
  * Response from the chart-of-accounts lookup endpoint.
+ * `GET /api/ledgers/lookup/{ledgerCode}`
  */
-export interface GlCodeLookupResponse {
-  accountCode: string;
-  accountName: string;
-  accountType: string;
+export interface LedgerReference {
+  /** Lookup returns `glCode`, mapped to `ledgerCode` by the service. */
+  glCode: string;
+  /** Lookup returns `glDesc`, mapped to `description` by the service. */
+  glDesc: string;
   leaf: string;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Pagination helpers                                                */
+/* ------------------------------------------------------------------ */
 
 /** Spring Page wrapper returned by list endpoints. */
 export interface Page<T> {

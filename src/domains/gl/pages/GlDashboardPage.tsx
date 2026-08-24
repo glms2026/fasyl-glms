@@ -36,7 +36,7 @@ import { heroButtonClass } from "@/domains/users/components/heroStyles";
 
 import { GlTabs } from "../components/GlTabs";
 import { glService } from "../services/glService";
-import type { GlAccount } from "../types";
+import type { LedgerResponse } from "../types";
 
 /* ------------------------------------------------------------------ */
 /*  Chart colours                                                     */
@@ -77,10 +77,10 @@ function LiveBadge() {
 /*  Derived chart data                                                */
 /* ------------------------------------------------------------------ */
 
-function deriveTypeDistribution(accounts: GlAccount[]) {
+function deriveTypeDistribution(ledgers: LedgerResponse[]) {
   const counts: Record<string, number> = {};
-  for (const a of accounts) {
-    const t = a.accountType?.toUpperCase() ?? "UNKNOWN";
+  for (const a of ledgers) {
+    const t = a.ledgerType?.toUpperCase() ?? "UNKNOWN";
     counts[t] = (counts[t] ?? 0) + 1;
   }
   return Object.entries(counts)
@@ -88,9 +88,9 @@ function deriveTypeDistribution(accounts: GlAccount[]) {
     .sort((a, b) => b.value - a.value);
 }
 
-function deriveLeafDistribution(accounts: GlAccount[]) {
+function deriveLeafDistribution(ledgers: LedgerResponse[]) {
   const counts: Record<string, number> = { Y: 0, N: 0 };
-  for (const a of accounts) {
+  for (const a of ledgers) {
     const key = a.leaf?.toUpperCase() === "Y" ? "Y" : "N";
     counts[key] += 1;
   }
@@ -100,9 +100,9 @@ function deriveLeafDistribution(accounts: GlAccount[]) {
   ];
 }
 
-function deriveMonthlyCreations(accounts: GlAccount[]) {
+function deriveMonthlyCreations(ledgers: LedgerResponse[]) {
   const byMonth = new Map<string, number>();
-  for (const a of accounts) {
+  for (const a of ledgers) {
     if (!a.createdAt) continue;
     const d = new Date(a.createdAt);
     const key = d.toLocaleString("en-US", { month: "short", year: "2-digit" });
@@ -131,23 +131,23 @@ export default function GlDashboardPage() {
     },
   );
 
-  const accounts = data ?? [];
+  const ledgers = data ?? [];
 
   const metrics = useMemo(() => {
-    const total = accounts.length;
-    const leafCount = accounts.filter((a) => a.leaf?.toUpperCase() === "Y").length;
+    const total = ledgers.length;
+    const leafCount = ledgers.filter((a) => a.leaf?.toUpperCase() === "Y").length;
     const headerCount = total - leafCount;
-    const types = new Set(accounts.map((a) => a.accountType?.toUpperCase()));
+    const types = new Set(ledgers.map((a) => a.ledgerType?.toUpperCase()));
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-    const newThisMonth = accounts.filter(
+    const newThisMonth = ledgers.filter(
       (a) => new Date(a.createdAt).getTime() >= thirtyDaysAgo,
     ).length;
     return { total, leafCount, headerCount, typeCount: types.size, newThisMonth };
-  }, [accounts, now]);
+  }, [ledgers, now]);
 
-  const typeDistribution = useMemo(() => deriveTypeDistribution(accounts), [accounts]);
-  const leafDistribution = useMemo(() => deriveLeafDistribution(accounts), [accounts]);
-  const monthlyCreations = useMemo(() => deriveMonthlyCreations(accounts), [accounts]);
+  const typeDistribution = useMemo(() => deriveTypeDistribution(ledgers), [ledgers]);
+  const leafDistribution = useMemo(() => deriveLeafDistribution(ledgers), [ledgers]);
+  const monthlyCreations = useMemo(() => deriveMonthlyCreations(ledgers), [ledgers]);
 
   // Live refresh
   useEffect(() => {
@@ -170,34 +170,39 @@ export default function GlDashboardPage() {
     };
   }, [refetch]);
 
-  const recentColumns: Array<DataTableColumn<GlAccount>> = [
+  const recentColumns: Array<DataTableColumn<LedgerResponse>> = [
     {
-      id: "accountCode",
-      header: "GL Code",
-      sortField: "accountCode",
+      id: "ledgerCode",
+      header: "Ledger Code",
+      sortField: "ledgerCode",
       cell: (row) => (
-        <span className="font-mono text-sm font-medium">{row.accountCode}</span>
+        <Link
+          to={`/gl/${row.id}`}
+          className="font-mono text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+        >
+          {row.ledgerCode}
+        </Link>
       ),
     },
     {
-      id: "accountName",
-      header: "GL Description",
+      id: "description",
+      header: "Description",
       cell: (row) => (
-        <span className="text-neutral-700">{row.accountName}</span>
+        <span className="text-neutral-700">{row.description}</span>
       ),
     },
     {
-      id: "accountType",
-      header: "GL Type",
+      id: "ledgerType",
+      header: "Ledger Type",
       cell: (row) => (
         <span
           className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
           style={{
-            backgroundColor: `${TYPE_COLORS[row.accountType?.toUpperCase()] ?? DEFAULT_COLOR}15`,
-            color: TYPE_COLORS[row.accountType?.toUpperCase()] ?? DEFAULT_COLOR,
+            backgroundColor: `${TYPE_COLORS[row.ledgerType?.toUpperCase()] ?? DEFAULT_COLOR}15`,
+            color: TYPE_COLORS[row.ledgerType?.toUpperCase()] ?? DEFAULT_COLOR,
           }}
         >
-          {titleCase(row.accountType)}
+          {titleCase(row.ledgerType)}
         </span>
       ),
     },
@@ -240,7 +245,7 @@ export default function GlDashboardPage() {
         actions={
           <Link to="/gl/create" className={heroButtonClass}>
             <Plus className="size-4" />
-            Create GL Account
+            Create Ledger Account
           </Link>
         }
       />
@@ -248,7 +253,7 @@ export default function GlDashboardPage() {
       <GlTabs />
 
       {/* Metric cards */}
-      <section aria-label="GL metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+      <section aria-label="Ledger metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <MetricCard
           label="Total Accounts"
           value={metrics.total}
@@ -289,15 +294,15 @@ export default function GlDashboardPage() {
       {/* Charts */}
       <div className="grid gap-6 xl:grid-cols-3">
         <SectionCard
-          title="By Account Type"
-          description="Distribution of GL accounts across types."
+          title="By Ledger Type"
+          description="Distribution of ledger accounts across types."
           className="xl:col-span-2"
           action={<LiveBadge />}
         >
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : typeDistribution.length === 0 ? (
-            <EmptyState title="No data" description="Create some GL accounts to see charts." />
+            <EmptyState title="No data" description="Create some ledger accounts to see charts." />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={typeDistribution} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -331,7 +336,7 @@ export default function GlDashboardPage() {
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : leafDistribution.every((d) => d.value === 0) ? (
-            <EmptyState title="No data" description="Create some GL accounts to see charts." />
+            <EmptyState title="No data" description="Create some ledger accounts to see charts." />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
@@ -367,7 +372,7 @@ export default function GlDashboardPage() {
       {monthlyCreations.length > 0 && (
         <SectionCard
           title="Account Creations Over Time"
-          description="Monthly trend of new GL account registrations."
+          description="Monthly trend of new ledger account registrations."
         >
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlyCreations} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -387,9 +392,9 @@ export default function GlDashboardPage() {
         </SectionCard>
       )}
 
-      {/* GL Entries table */}
+      {/* Ledger Entries table */}
       <SectionCard
-        title="GL Entries"
+        title="Ledger Entries"
         description="Browse all accounts in the general ledger."
         action={
           <Link
@@ -403,7 +408,7 @@ export default function GlDashboardPage() {
       >
         <DataTable
           columns={recentColumns}
-          rows={accounts.slice(0, 5)}
+          rows={ledgers.slice(0, 5)}
           getRowId={(row) => row.id}
           isLoading={isLoading}
           error={error}
@@ -412,11 +417,11 @@ export default function GlDashboardPage() {
             <EmptyState
               icon={BookOpen}
               title="No accounts yet"
-              description="Create the first GL account to get started."
+              description="Create the first ledger account to get started."
               action={
                 <Link to="/gl/create" className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
                   <Plus className="size-4" />
-                  Create GL Account
+                  Create Ledger Account
                 </Link>
               }
             />

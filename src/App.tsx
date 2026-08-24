@@ -26,6 +26,7 @@ const DashboardPage = lazy(
 const GlDashboardPage = lazy(() => import("@/domains/gl/pages/GlDashboardPage"));
 const CreateGlPage = lazy(() => import("@/domains/gl/pages/CreateGlPage"));
 const GlEntriesPage = lazy(() => import("@/domains/gl/pages/GlEntriesPage"));
+const GlDetailPage = lazy(() => import("@/domains/gl/pages/GlDetailPage"));
 const UsersOverviewPage = lazy(
   () => import("@/domains/users/pages/UsersOverviewPage"),
 );
@@ -84,6 +85,7 @@ export default function App() {
                 <Route path="/gl" element={<GlDashboardPage />} />
                 <Route path="/gl/create" element={<CreateGlPage />} />
                 <Route path="/gl/entries" element={<GlEntriesPage />} />
+                <Route path="/gl/:id" element={<GlDetailPage />} />
 
                 <Route path="/users" element={<UsersOverviewPage />} />
                 <Route path="/users/list" element={<UsersListPage />} />

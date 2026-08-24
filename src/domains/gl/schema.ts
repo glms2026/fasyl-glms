@@ -1,28 +1,29 @@
 import { z } from "zod";
 
 export const createGlSchema = z.object({
-  /** GL_CODE — 1-9 characters, not null. */
-  accountCode: z
+  /** ledgerCode — numeric only, 2-30 characters. */
+  ledgerCode: z
     .string()
     .trim()
-    .min(1, "GL Code is required")
-    .max(9, "GL Code must be 9 characters or fewer"),
+    .min(2, "Ledger Code must be at least 2 digits")
+    .max(30, "Ledger Code must be 30 digits or fewer")
+    .regex(/^[0-9]+$/, "Ledger Code must contain only digits"),
 
-  /** GL_DESC — max 150 characters. */
-  accountName: z
+  /** description — required, max 500 characters. */
+  description: z
     .string()
     .trim()
-    .min(1, "GL Description is required")
-    .max(150, "GL Description must be 150 characters or fewer"),
+    .min(1, "Ledger Description is required")
+    .max(500, "Ledger Description must be 500 characters or fewer"),
 
-  /** GL_TYPE — max 30 characters. */
-  accountType: z
+  /** ledgerType — required, 2-150 characters. */
+  ledgerType: z
     .string()
     .trim()
-    .min(1, "GL Type is required")
-    .max(30, "GL Type must be 30 characters or fewer"),
+    .min(2, "Ledger Type must be at least 2 characters")
+    .max(150, "Ledger Type must be 150 characters or fewer"),
 
-  /** LEAF — "Y" or "N". */
+  /** leaf — required, exactly 1 character. */
   leaf: z
     .string()
     .trim()
@@ -30,5 +31,15 @@ export const createGlSchema = z.object({
     .max(1, "Must be Y or N"),
 });
 
+/** Schema for updating a ledger (only ledgerType is editable). */
+export const updateGlSchema = z.object({
+  ledgerType: z
+    .string()
+    .trim()
+    .min(2, "GL Type must be at least 2 characters")
+    .max(150, "GL Type must be 150 characters or fewer"),
+});
+
 export type CreateGlFormValues = z.input<typeof createGlSchema>;
 export type CreateGlParsedValues = z.output<typeof createGlSchema>;
+export type UpdateGlFormValues = z.input<typeof updateGlSchema>;

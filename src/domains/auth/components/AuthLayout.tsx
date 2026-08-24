@@ -38,7 +38,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 <div className="mt-10 border-l-4 border-neutral-200 pl-5">
                   <p className="text-lg leading-9 text-neutral-300">
                     Access the Management Information System. Our
-                    enterprise-grade security protocols ensure the integrity of
+                    enterprise-grade security protocol ensure the integrity of
                     every financial instrument and audit trail within the fiscal
                     ecosystem.
                   </p>

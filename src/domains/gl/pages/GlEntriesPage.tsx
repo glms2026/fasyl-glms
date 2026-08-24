@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, FileText, Plus, TreePine } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,30 @@ import { GlTabs } from "../components/GlTabs";
 
 import { glService } from "../services/glService";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import type { GlAccount } from "../types";
+import type { LedgerResponse, LedgerStatus } from "../types";
+
+/* ------------------------------------------------------------------ */
+/*  Status badge                                                      */
+/* ------------------------------------------------------------------ */
+
+const STATUS_STYLES: Record<LedgerStatus, string> = {
+  PENDING: "bg-amber-50 text-amber-700 ring-amber-200",
+  PROCESSING: "bg-blue-50 text-blue-700 ring-blue-200",
+  SUBMITTED: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+  ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  INACTIVE: "bg-neutral-100 text-neutral-600 ring-neutral-200",
+  SUSPENDED: "bg-red-50 text-red-700 ring-red-200",
+};
+
+function StatusBadge({ status }: { status: LedgerStatus }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_STYLES[status] ?? "bg-neutral-100 text-neutral-600"}`}
+    >
+      {titleCase(status)}
+    </span>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Leaf badge                                                        */
@@ -45,13 +68,15 @@ function LeafBadge({ leaf }: { leaf: string }) {
 type SortDirection = "asc" | "desc";
 
 export default function GlEntriesPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [leafFilter, setLeafFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [sort, setSort] = useState<{
-    field: keyof GlAccount;
+    field: keyof LedgerResponse;
     direction: SortDirection;
   } | null>({ field: "createdAt", direction: "desc" });
 
@@ -73,31 +98,34 @@ export default function GlEntriesPage() {
     const content = data?.content ?? [];
     const term = debouncedSearch.trim().toLowerCase();
 
-    return content.filter((account) => {
+    return content.filter((ledger) => {
       const matchesType =
         typeFilter === "ALL" ||
-        account.accountType?.toUpperCase() === typeFilter;
+        ledger.ledgerType?.toUpperCase() === typeFilter;
       const matchesLeaf =
         leafFilter === "ALL" ||
-        account.leaf?.toUpperCase() === leafFilter;
+        ledger.leaf?.toUpperCase() === leafFilter;
+      const matchesStatus =
+        statusFilter === "ALL" || ledger.status === statusFilter;
 
-      if (!matchesType || !matchesLeaf) return false;
+      if (!matchesType || !matchesLeaf || !matchesStatus) return false;
       if (!term) return true;
 
       const haystack = [
-        account.accountCode,
-        account.accountName,
-        account.accountType,
-        account.leaf,
+        ledger.ledgerCode,
+        ledger.description,
+        ledger.ledgerType,
+        ledger.leaf,
+        ledger.status,
       ]
         .join(" ")
         .toLowerCase();
 
       return haystack.includes(term);
     });
-  }, [data, typeFilter, leafFilter, debouncedSearch]);
+  }, [data, typeFilter, leafFilter, statusFilter, debouncedSearch]);
 
-  const toggleSort = (field: keyof GlAccount) => {
+  const toggleSort = (field: keyof LedgerResponse) => {
     setPage(1);
     setSort((current) => {
       if (!current || current.field !== field) {
@@ -110,32 +138,35 @@ export default function GlEntriesPage() {
     });
   };
 
-  const columns: Array<DataTableColumn<GlAccount>> = [
+  const columns: Array<DataTableColumn<LedgerResponse>> = [
     {
-      id: "accountCode",
-      header: "GL Code",
-      sortField: "accountCode",
+      id: "ledgerCode",
+      header: "Ledger Code",
+      sortField: "ledgerCode",
       cell: (row) => (
-        <span className="font-mono text-sm font-semibold text-neutral-900">
-          {row.accountCode}
-        </span>
+        <button
+          onClick={() => navigate(`/gl/${row.id}`)}
+          className="font-mono text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+        >
+          {row.ledgerCode}
+        </button>
       ),
     },
     {
-      id: "accountName",
-      header: "GL Description",
-      sortField: "accountName",
+      id: "description",
+      header: "Description",
+      sortField: "description",
       cell: (row) => (
-        <span className="text-neutral-700">{row.accountName}</span>
+        <span className="text-neutral-700">{row.description}</span>
       ),
     },
     {
-      id: "accountType",
-      header: "GL Type",
-      sortField: "accountType",
+      id: "ledgerType",
+      header: "Ledger Type",
+      sortField: "ledgerType",
       cell: (row) => (
         <span className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700">
-          {titleCase(row.accountType)}
+          {titleCase(row.ledgerType)}
         </span>
       ),
     },
@@ -143,6 +174,12 @@ export default function GlEntriesPage() {
       id: "leaf",
       header: "Leaf",
       cell: (row) => <LeafBadge leaf={row.leaf} />,
+    },
+    {
+      id: "status",
+      header: "Status",
+      sortField: "status",
+      cell: (row) => <StatusBadge status={row.status} />,
     },
     {
       id: "createdAt",
@@ -160,17 +197,17 @@ export default function GlEntriesPage() {
   const totalRows = data?.totalElements ?? 0;
   const pageCount = Math.max(1, data?.totalPages ?? 1);
   const filterActive =
-    typeFilter !== "ALL" || leafFilter !== "ALL" || debouncedSearch !== "";
+    typeFilter !== "ALL" || leafFilter !== "ALL" || statusFilter !== "ALL" || debouncedSearch !== "";
 
   return (
     <div className="space-y-6">
       <ModuleHeader
-        title="GL Entries"
+        title="Ledger Entries"
         description="Browse all accounts in the general ledger."
         actions={
           <Link to="/gl/create" className={heroButtonClass}>
             <Plus className="size-4" />
-            Create GL Account
+            Create Ledger Account
           </Link>
         }
       />
@@ -184,7 +221,7 @@ export default function GlEntriesPage() {
               value={search}
               onChange={(v) => { setSearch(v); setPage(1); }}
               label="Search entries"
-              placeholder="Search by code, name, or type"
+              placeholder="Search by code, description, or type"
               className="sm:max-w-sm sm:flex-1"
             />
 
@@ -213,12 +250,27 @@ export default function GlEntriesPage() {
                 <option value="Y">Leaf</option>
                 <option value="N">Header</option>
               </Select>
+
+              <Select
+                aria-label="Filter by status"
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                className="sm:w-36"
+              >
+                <option value="ALL">All statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="PENDING">Pending</option>
+                <option value="PROCESSING">Processing</option>
+                <option value="SUBMITTED">Submitted</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="SUSPENDED">Suspended</option>
+              </Select>
             </div>
           </div>
         </div>
 
         <DataTable
-          caption="GL Entries"
+          caption="Ledger Entries"
           columns={columns}
           rows={rows}
           getRowId={(row) => row.id}
@@ -233,12 +285,12 @@ export default function GlEntriesPage() {
               <EmptyState
                 icon={BookOpen}
                 title="No entries match those filters"
-                description="Try a different search term, or clear the type and leaf filters."
+                description="Try a different search term, or clear the filters."
               />
             ) : (
               <EmptyState
                 icon={BookOpen}
-                title="No GL entries yet"
+                title="No ledger entries yet"
                 description="Create the first account to populate the ledger."
                 action={
                   <Link
@@ -246,7 +298,7 @@ export default function GlEntriesPage() {
                     className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
                   >
                     <Plus className="size-4" />
-                    Create GL Account
+                    Create Ledger Account
                   </Link>
                 }
               />
