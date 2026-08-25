@@ -129,7 +129,7 @@ public class LedgerController {
 
 
     @GetMapping("/search/all")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<LedgerResponse>> searchAllLedgers(
 
             @RequestParam(
@@ -161,7 +161,7 @@ public class LedgerController {
 
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<LedgerResponse>> getAllLedgers(
 
             @PageableDefault(
