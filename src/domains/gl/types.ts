@@ -30,7 +30,8 @@ export type LedgerStatus =
   | "SUBMITTED"
   | "ACTIVE"
   | "INACTIVE"
-  | "SUSPENDED";
+  | "SUSPENDED"
+  | "REJECTED";
 
 export interface LedgerResponse {
   id: number;

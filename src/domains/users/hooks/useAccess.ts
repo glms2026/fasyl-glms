@@ -19,12 +19,14 @@ export function useAccess() {
   const isAdmin = roles.includes("ADMIN");
   const isControl = roles.includes("CONTROL");
   const isAuthorizer = roles.includes("AUTHORIZER");
+  const isCreator = roles.includes("CREATOR");
 
   return {
     roles,
     isAdmin,
     isControl,
     isAuthorizer,
+    isCreator,
     /** May list and view users and the role catalogue. */
     canViewUsers: isAdmin || isControl || isAuthorizer,
     /** May create maker approval requests (lock / suspend / deactivate / roles…). */

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, FileText, Plus, TreePine } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/common/SearchInput";
 import { DataTable, type DataTableColumn } from "@/components/common/DataTable";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -19,6 +18,7 @@ import { GlTabs } from "../components/GlTabs";
 
 import { glService } from "../services/glService";
 import { useApiQuery } from "@/hooks/useApiQuery";
+import { useAccess } from "@/domains/users/hooks/useAccess";
 import type { LedgerResponse, LedgerStatus } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -32,6 +32,7 @@ const STATUS_STYLES: Record<LedgerStatus, string> = {
   ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   INACTIVE: "bg-neutral-100 text-neutral-600 ring-neutral-200",
   SUSPENDED: "bg-red-50 text-red-700 ring-red-200",
+  REJECTED: "bg-red-50 text-red-700 ring-red-200",
 };
 
 function StatusBadge({ status }: { status: LedgerStatus }) {
@@ -41,23 +42,6 @@ function StatusBadge({ status }: { status: LedgerStatus }) {
     >
       {titleCase(status)}
     </span>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Leaf badge                                                        */
-/* ------------------------------------------------------------------ */
-
-function LeafBadge({ leaf }: { leaf: string }) {
-  const isLeaf = leaf?.toUpperCase() === "Y";
-  return (
-    <Badge
-      variant={isLeaf ? "success" : "info"}
-      className="inline-flex items-center gap-1"
-    >
-      {isLeaf ? <TreePine className="size-3" /> : <FileText className="size-3" />}
-      {isLeaf ? "Leaf" : "Header"}
-    </Badge>
   );
 }
 
@@ -79,51 +63,58 @@ export default function GlEntriesPage() {
     field: keyof LedgerResponse;
     direction: SortDirection;
   } | null>({ field: "createdAt", direction: "desc" });
+  const sortParam = sort
+    ? `${String(sort.field)},${sort.direction}`
+    : undefined;
+  const { isAdmin } = useAccess();
+  const debouncedSearch = useDebouncedValue(search, 250);
+  const searchTerm = debouncedSearch.trim();
 
-  const sortParam = sort ? `${String(sort.field)},${sort.direction}` : undefined;
-
+  // Server-side data fetch: list vs search
   const { data, isLoading, error, refetch } = useApiQuery(
-    ["gl:entries", page - 1, pageSize, sortParam].join(":"),
-    () =>
-      glService.list({
-        page: page - 1,
-        size: pageSize,
-        sort: sortParam,
-      }),
+    ["gl:entries", page - 1, pageSize, sortParam, searchTerm].join(":"),
+    () => {
+      if (searchTerm) {
+        return isAdmin
+          ? glService.searchAll(searchTerm, {
+              page: page - 1,
+              size: pageSize,
+              sort: sortParam,
+            })
+          : glService.search(searchTerm, {
+              page: page - 1,
+              size: pageSize,
+              sort: sortParam,
+            });
+      }
+      return isAdmin
+        ? glService.list({ page: page - 1, size: pageSize, sort: sortParam })
+        : glService.getMyLedgers({
+            page: page - 1,
+            size: pageSize,
+            sort: sortParam,
+          });
+    },
   );
 
-  const debouncedSearch = useDebouncedValue(search, 250);
-
+  // Client-side filter only for type/leaf/status (server doesn't filter these)
+  // Always exclude REJECTED ledgers from the table
   const rows = useMemo(() => {
     const content = data?.content ?? [];
-    const term = debouncedSearch.trim().toLowerCase();
 
     return content.filter((ledger) => {
+      const statusUpper = ledger.status?.toUpperCase();
+      if (statusUpper === "REJECTED") return false;
       const matchesType =
-        typeFilter === "ALL" ||
-        ledger.ledgerType?.toUpperCase() === typeFilter;
+        typeFilter === "ALL" || ledger.ledgerType?.toUpperCase() === typeFilter;
       const matchesLeaf =
-        leafFilter === "ALL" ||
-        ledger.leaf?.toUpperCase() === leafFilter;
+        leafFilter === "ALL" || ledger.leaf?.toUpperCase() === leafFilter;
       const matchesStatus =
         statusFilter === "ALL" || ledger.status === statusFilter;
 
-      if (!matchesType || !matchesLeaf || !matchesStatus) return false;
-      if (!term) return true;
-
-      const haystack = [
-        ledger.ledgerCode,
-        ledger.description,
-        ledger.ledgerType,
-        ledger.leaf,
-        ledger.status,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(term);
+      return matchesType && matchesLeaf && matchesStatus;
     });
-  }, [data, typeFilter, leafFilter, statusFilter, debouncedSearch]);
+  }, [data, typeFilter, leafFilter, statusFilter]);
 
   const toggleSort = (field: keyof LedgerResponse) => {
     setPage(1);
@@ -173,7 +164,22 @@ export default function GlEntriesPage() {
     {
       id: "leaf",
       header: "Leaf",
-      cell: (row) => <LeafBadge leaf={row.leaf} />,
+      cell: (row) => (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            row.leaf?.toUpperCase() === "Y"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-indigo-50 text-indigo-700"
+          }`}
+        >
+          {row.leaf?.toUpperCase() === "Y" ? (
+            <TreePine className="size-3" />
+          ) : (
+            <FileText className="size-3" />
+          )}
+          {row.leaf?.toUpperCase() === "Y" ? "Y" : "N"}
+        </span>
+      ),
     },
     {
       id: "status",
@@ -197,7 +203,10 @@ export default function GlEntriesPage() {
   const totalRows = data?.totalElements ?? 0;
   const pageCount = Math.max(1, data?.totalPages ?? 1);
   const filterActive =
-    typeFilter !== "ALL" || leafFilter !== "ALL" || statusFilter !== "ALL" || debouncedSearch !== "";
+    typeFilter !== "ALL" ||
+    leafFilter !== "ALL" ||
+    statusFilter !== "ALL" ||
+    debouncedSearch !== "";
 
   return (
     <div className="space-y-6">
@@ -219,7 +228,10 @@ export default function GlEntriesPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <SearchInput
               value={search}
-              onChange={(v) => { setSearch(v); setPage(1); }}
+              onChange={(v) => {
+                setSearch(v);
+                setPage(1);
+              }}
               label="Search entries"
               placeholder="Search by code, description, or type"
               className="sm:max-w-sm sm:flex-1"
@@ -229,7 +241,10 @@ export default function GlEntriesPage() {
               <Select
                 aria-label="Filter by type"
                 value={typeFilter}
-                onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value);
+                  setPage(1);
+                }}
                 className="sm:w-36"
               >
                 <option value="ALL">All types</option>
@@ -243,7 +258,10 @@ export default function GlEntriesPage() {
               <Select
                 aria-label="Filter by leaf"
                 value={leafFilter}
-                onChange={(e) => { setLeafFilter(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setLeafFilter(e.target.value);
+                  setPage(1);
+                }}
                 className="sm:w-32"
               >
                 <option value="ALL">All</option>
@@ -254,7 +272,10 @@ export default function GlEntriesPage() {
               <Select
                 aria-label="Filter by status"
                 value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
                 className="sm:w-36"
               >
                 <option value="ALL">All statuses</option>

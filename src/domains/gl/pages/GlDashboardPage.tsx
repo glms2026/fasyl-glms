@@ -36,6 +36,7 @@ import { heroButtonClass } from "@/domains/users/components/heroStyles";
 
 import { GlTabs } from "../components/GlTabs";
 import { glService } from "../services/glService";
+import { useAccess } from "@/domains/users/hooks/useAccess";
 import type { LedgerResponse } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -122,11 +123,14 @@ const AUTO_REFRESH_MS = 60_000;
 
 export default function GlDashboardPage() {
   const [now, setNow] = useState(() => Date.now());
+  const { isAdmin } = useAccess();
 
   const { data, isLoading, error, refetch } = useApiQuery(
     "gl:all",
     async () => {
-      const page = await glService.list({ page: 0, size: 1000 });
+      const page = isAdmin
+        ? await glService.list({ page: 0, size: 1000 })
+        : await glService.getMyLedgers({ page: 0, size: 1000 });
       return page.content;
     },
   );
@@ -222,7 +226,7 @@ export default function GlDashboardPage() {
           ) : (
             <FileText className="size-3" />
           )}
-          {row.leaf?.toUpperCase() === "Y" ? "Leaf" : "Header"}
+          {row.leaf?.toUpperCase() === "Y" ? "Y" : "N"}
         </span>
       ),
     },
@@ -408,7 +412,7 @@ export default function GlDashboardPage() {
       >
         <DataTable
           columns={recentColumns}
-          rows={ledgers.slice(0, 5)}
+          rows={ledgers.filter((l) => l.status !== "REJECTED").slice(0, 5)}
           getRowId={(row) => row.id}
           isLoading={isLoading}
           error={error}

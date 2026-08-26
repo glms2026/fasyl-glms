@@ -53,6 +53,7 @@ const STATUS_STYLES: Record<
   ACTIVE: { badge: "bg-emerald-50 text-emerald-700 ring-emerald-200", icon: CheckCircle2 },
   INACTIVE: { badge: "bg-neutral-100 text-neutral-600 ring-neutral-200", icon: FileText },
   SUSPENDED: { badge: "bg-red-50 text-red-700 ring-red-200", icon: FileText },
+  REJECTED: { badge: "bg-red-50 text-red-700 ring-red-200", icon: FileText },
 };
 
 function StatusBadge({ status }: { status: LedgerStatus }) {
@@ -264,7 +265,7 @@ export default function GlDetailPage() {
                   ) : (
                     <FileText className="size-3" />
                   )}
-                  {ledger.leaf?.toUpperCase() === "Y" ? "Yes — Leaf" : "No — Header"}
+                  {ledger.leaf?.toUpperCase() === "Y" ? "Y — Leaf" : "N — Header"}
                 </span>
               </dd>
             </div>
