@@ -20,7 +20,7 @@ const actions: QuickAction[] = [
   {
     label: "Create GL account",
     description: "Open a new ledger account",
-    href: "/create-gl",
+    href: "/gl/create",
     icon: Plus,
     allowedRoles: ["ADMIN", "CREATOR"],
   },

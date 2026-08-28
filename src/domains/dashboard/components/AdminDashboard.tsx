@@ -71,7 +71,7 @@ export function AdminDashboard() {
               Add user
             </Link>
             <Link
-              to="/create-gl"
+              to="/gl/create"
               className={cn(buttonVariants({ size: "lg" }), "px-4")}
             >
               Create GL

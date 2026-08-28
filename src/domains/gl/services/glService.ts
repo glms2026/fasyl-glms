@@ -55,6 +55,15 @@ export const glService = {
   },
 
   /**
+   * GET /api/ledgers/reference-data
+   * Fetch all ledger reference data (flat array, not paginated).
+   */
+  async getReferenceData(): Promise<LedgerReference[]> {
+    const response = await apiClient.get<LedgerReference[]>("/ledgers/reference-data");
+    return response.data;
+  },
+
+  /**
    * GET /api/ledgers/lookup/{ledgerCode}
    * Look up a ledger code in the reference table and return pre-filled fields.
    */
