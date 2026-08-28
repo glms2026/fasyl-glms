@@ -54,7 +54,7 @@ function LeafBadge({ leaf }: { leaf?: string }) {
       )}
     >
       {isLeaf ? <TreePine className="size-3" /> : <FileText className="size-3" />}
-      {isLeaf ? "Leaf" : "Header"}
+      {leaf?.toUpperCase() ?? "—"}
     </span>
   );
 }

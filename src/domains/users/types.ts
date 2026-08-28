@@ -140,6 +140,8 @@ export const ApprovalAction = {
   ASSIGN_PERMISSION: "ASSIGN_PERMISSION",
   REMOVE_PERMISSION: "REMOVE_PERMISSION",
   USER_DELETE: "USER_DELETE",
+  LEDGER_CREATE: "LEDGER_CREATE",
+  LEDGER_UPDATE: "LEDGER_UPDATE",
 } as const;
 
 export type ApprovalActionType =
@@ -181,6 +183,11 @@ export interface UserApprovalRequest {
   createdAt: string | null;
   approvedAt: string | null;
   rejectedAt: string | null;
+  /**
+   * JSON-encoded payload with the action-specific data.
+   * For LEDGER_CREATE / LEDGER_UPDATE this contains ledgerCode, description, leaf, etc.
+   */
+  payloadJson?: string | null;
 }
 
 /** PUT /api/user-approval-requests/{id}/approve | /reject body. */
