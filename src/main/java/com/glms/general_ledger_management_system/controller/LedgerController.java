@@ -75,6 +75,24 @@ public class LedgerController {
 
 
 
+    /**
+     * GET ALL REFERENCE DATA
+     *
+     * Returns all records from the FCUBS_GLTM_GLMASTER table.
+     * This serves as the source of truth for ledger master data.
+     */
+    @GetMapping("/reference-data")
+    @PreAuthorize("hasAuthority('LEDGER_CREATE')")
+    public ResponseEntity<java.util.List<LedgerReference>> getAllReferenceData() {
+
+        java.util.List<LedgerReference> referenceData =
+                ledgerService.getAllReferenceData();
+
+        return ResponseEntity.ok(referenceData);
+    }
+
+
+
     @GetMapping("/my-ledgers")
     @PreAuthorize("hasAuthority('LEDGER_READ')")
     public ResponseEntity<Page<LedgerResponse>> getMyLedgers(
@@ -129,7 +147,7 @@ public class LedgerController {
 
 
     @GetMapping("/search/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LEDGER_VIEW_ALL') or hasRole('ADMIN')")
     public ResponseEntity<Page<LedgerResponse>> searchAllLedgers(
 
             @RequestParam(
@@ -161,7 +179,7 @@ public class LedgerController {
 
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('LEDGER_VIEW_ALL') or hasRole('ADMIN')")
     public ResponseEntity<Page<LedgerResponse>> getAllLedgers(
 
             @PageableDefault(

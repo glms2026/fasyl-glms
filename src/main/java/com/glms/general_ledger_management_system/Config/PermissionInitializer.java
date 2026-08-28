@@ -147,6 +147,11 @@ public class PermissionInitializer {
                 "Update a ledger"
         );
 
+        createPermission(
+                "LEDGER_VIEW_ALL",
+                "View all ledgers across all users"
+        );
+
 
         /*
          * --------------------------------------------------------
@@ -251,7 +256,8 @@ public class PermissionInitializer {
                 getPermissions(
                         "LEDGER_CREATE",
                         "LEDGER_READ",
-                        "LEDGER_UPDATE"
+                        "LEDGER_UPDATE",
+                        "LEDGER_VIEW_ALL"
                 )
         );
 

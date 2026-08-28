@@ -74,9 +74,7 @@ public class LedgerService {
             throw new IllegalArgumentException(
                     "Please enter a ledger code to look up."
             );
-        }
-
-        return ledgerReferenceRepository
+        }        return ledgerReferenceRepository
                 .findByGlCode(ledgerCode.trim())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -87,6 +85,20 @@ public class LedgerService {
                 );
     }
 
+
+    /**
+     * ============================================================
+     * GET ALL REFERENCE DATA
+     * ============================================================
+     *
+     * Returns all records from the FCUBS_GLTM_GLMASTER table.
+     * This serves as the source of truth for ledger master data.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<LedgerReference> getAllReferenceData() {
+
+        return ledgerReferenceRepository.findAll();
+    }
 
 
     /**
@@ -372,7 +384,7 @@ public class LedgerService {
                 getAuthenticatedUser();
 
 
-        verifyAdminAccess(currentUser);
+        verifyLedgerViewAllAccess(currentUser);
 
 
         return ledgerRepository
@@ -480,7 +492,7 @@ public class LedgerService {
                 getAuthenticatedUser();
 
 
-        verifyAdminAccess(currentUser);
+        verifyLedgerViewAllAccess(currentUser);
 
 
         String searchKeyword =
@@ -758,6 +770,37 @@ public class LedgerService {
 
             throw new AccessDeniedException(
                     "This action requires administrator privileges."
+            );
+        }
+    }
+
+
+    /**
+     * Verify the user can view all ledgers.
+     *
+     * Allows ADMIN role or LEDGER_VIEW_ALL permission.
+     */
+    private void verifyLedgerViewAllAccess(
+            User user
+    ) {
+
+        boolean hasAccess =
+                user.getRoles()
+                        .stream()
+                        .anyMatch(
+                                role ->
+                                        "ADMIN".equals(role.getName())
+                                        || (
+                                                role.getPermissions() != null
+                                                && role.getPermissions().stream().anyMatch(
+                                                        perm -> "LEDGER_VIEW_ALL".equals(perm.getName())
+                                                )
+                                        )
+                        );
+
+        if (!hasAccess) {
+            throw new AccessDeniedException(
+                    "This action requires administrator privileges or LEDGER_VIEW_ALL permission."
             );
         }
     }
