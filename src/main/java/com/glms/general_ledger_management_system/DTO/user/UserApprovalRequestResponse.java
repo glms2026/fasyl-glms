@@ -79,6 +79,16 @@ public class UserApprovalRequestResponse {
     private String remark;
 
     /**
+     * JSON payload containing staged data.
+     *
+     * For LEDGER_CREATE: contains ledgerCode, ledgerType,
+     * leaf, description, and createdById.
+     *
+     * For USER_UPDATE: contains the proposed field changes.
+     */
+    private String payloadJson;
+
+    /**
      * When the maker created the request.
      */
     private ZonedDateTime requestedAt;

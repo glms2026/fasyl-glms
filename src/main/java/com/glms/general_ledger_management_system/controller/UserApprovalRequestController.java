@@ -546,6 +546,13 @@ public class UserApprovalRequestController {
                 )
 
                 /*
+                 * Payload (ledger data, staged user updates, etc.)
+                 */
+                .payloadJson(
+                        request.getPayloadJson()
+                )
+
+                /*
                  * Timestamps
                  */
                 .createdAt(
