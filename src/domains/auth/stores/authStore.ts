@@ -80,6 +80,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
+    // If the access token is expired locally, skip the network round-trip
+    // (which can take 60-90 s on a cold backend) and end the session
+    // immediately.
+    if (tokenStorage.isTokenExpired()) {
+      tokenStorage.clear();
+      set({ user: null, isAuthenticated: false, initializing: false });
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login?reason=session-expired");
+      }
+      return;
+    }
+
     try {
       const profile = await authService.getProfile();
 

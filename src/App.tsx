@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 
 import { AppShell } from "@/layouts/dashboard/AppShell";
 import { useAuthStore } from "@/domains/auth/stores/authStore";
+import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 
 import MustChangePassword from "./routes/MustChangePassword";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -58,6 +59,9 @@ export default function App() {
   useEffect(() => {
     void initialize();
   }, [initialize]);
+
+  // Auto-logout after 7 minutes of inactivity.
+  useInactivityLogout();
 
   return (
     <BrowserRouter>

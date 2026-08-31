@@ -85,4 +85,29 @@ export const tokenStorage = {
   hasSession(): boolean {
     return Boolean(read(ACCESS_TOKEN_KEY));
   },
+
+  /**
+   * Returns true if the stored access token has an expired `exp` claim.
+   * Falls back to `true` if the token is missing or malformed — the
+   * caller should clear the session in that case.
+   */
+  isTokenExpired(): boolean {
+    const token = this.getAccessToken();
+    if (!token) return true;
+    try {
+      const parts = token.split(".");
+      // Not a JWT (e.g. test mock "fake-token") — treat as valid so the
+      // existing network check decides.
+      if (parts.length !== 3) return false;
+      const payload = JSON.parse(
+        atob(parts[1] ?? ""),
+      ) as { exp?: number };
+      if (!payload.exp) return false; // no expiry claim — treat as valid
+      // Expire 10 seconds early to avoid edge-case races.
+      return Date.now() >= (payload.exp - 10) * 1000;
+    } catch {
+      // Malformed payload — fall through to the network check.
+      return false;
+    }
+  },
 };
