@@ -55,7 +55,9 @@ export function ControlDashboard() {
   const pendingApprovals = approvalsQuery.data?.content ?? [];
   const lockedUsers = users.filter((u) => u.status === "LOCKED");
   const suspendedUsers = users.filter((u) => u.status === "SUSPENDED");
-  const recentUsers = users.slice(0, 5);
+  const recentUsers = [...users]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   // Derive chart data
   const statusDistData = deriveStatusDistribution(users);
